@@ -102,8 +102,10 @@ SPVTOOLS_OPT_SRC_FILES := \
 		source/opt/inline_pass.cpp \
 		source/opt/inline_exhaustive_pass.cpp \
 		source/opt/inline_opaque_pass.cpp \
+		source/opt/inst_bindless_check_pass.cpp \
 		source/opt/instruction.cpp \
 		source/opt/instruction_list.cpp \
+		source/opt/instrument_pass.cpp \
 		source/opt/ir_context.cpp \
 		source/opt/ir_loader.cpp \
 		source/opt/licm_pass.cpp \
@@ -129,6 +131,7 @@ SPVTOOLS_OPT_SRC_FILES := \
 		source/opt/pass.cpp \
 		source/opt/pass_manager.cpp \
 		source/opt/private_to_local_pass.cpp \
+		source/opt/process_lines_pass.cpp \
 		source/opt/propagator.cpp \
 		source/opt/reduce_load_size.cpp \
 		source/opt/redundancy_elimination.cpp \
