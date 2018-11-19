@@ -625,6 +625,19 @@ SPIRV_TOOLS_EXPORT spv_result_t spvBinaryParse(
     const size_t num_words, spv_parsed_header_fn_t parse_header,
     spv_parsed_instruction_fn_t parse_instruction, spv_diagnostic* diagnostic);
 
+// Zero Edit: C-Api for the optimizer isn't supported yet so here's my implementations
+SPIRV_TOOLS_EXPORT spv_result_t spvOptimizeWithOptions(
+  const spv_const_context context, const spv_const_optimizer_options options,
+  const spv_const_binary binary, spv_binary* binaryOut, spv_diagnostic* diagnostic);
+
+typedef struct spv_opcodes_t {
+  const char** opcode_names;
+  size_t count;
+} spv_opcodes_t;
+
+SPIRV_TOOLS_EXPORT spv_result_t spvGetOpcodeNames(spv_target_env env, spv_opcodes_t* opCodes);
+SPIRV_TOOLS_EXPORT void spvDestroyOpcodeNames(spv_opcodes_t* opCodes);
+
 #ifdef __cplusplus
 }
 #endif
