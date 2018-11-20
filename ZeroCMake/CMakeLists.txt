@@ -108,14 +108,12 @@ target_link_libraries(SPIRV-Tools-opt
 ################################################################################
 # set the output directories for all of our targets
 ################################################################################
-set_target_properties(SPIRV-Tools
-                      PROPERTIES
+zero_multitarget_output_directories(SPIRV-Tools
                       LIBRARY_DIRECTORY ${zero_library_dir}
                       RUNTIME_DIRECTORY ${zero_binary_dir}
 )
 
-set_target_properties(SPIRV-Tools-opt
-                      PROPERTIES
+zero_multitarget_output_directories(SPIRV-Tools-opt
                       LIBRARY_DIRECTORY ${zero_library_dir}
                       RUNTIME_DIRECTORY ${zero_binary_dir}
 )
@@ -124,9 +122,8 @@ set_target_properties(SPIRV-Tools-opt
 # Specify any additional target options such as pdb locations
 ################################################################################
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR (CMAKE_GENERATOR_TOOLSET STREQUAL "LLVM-vs2014"))
-    set_target_properties(
+    zero_multitarget_output_settings(
         SPIRV-Tools
-        PROPERTIES
         CONFIGS ${supported_configs}
         BASEPATH ${zero_build_out}
         PLATFORM ${platform}
@@ -135,9 +132,8 @@ if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR (CMAKE_GENERATOR_TOOLSET STREQUAL 
         TOOLSET ${CMAKE_VS_PLATFORM_TOOLSET}
         TARGET_SUBFOLDER
     )
-    set_target_properties(
+    zero_multitarget_output_settings(
         SPIRV-Tools-opt
-        PROPERTIES
         CONFIGS ${supported_configs}
         BASEPATH ${zero_build_out}
         PLATFORM ${platform}
@@ -152,7 +148,7 @@ endif()
 # set flags and definitions
 ################################################################################
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR (CMAKE_GENERATOR_TOOLSET STREQUAL "LLVM-vs2014"))
-    target_compile_options(  
+    zero_multitarget_compile_options(  
         SPIRV-Tools
         PRIVATE 
         PUBLIC
@@ -178,7 +174,7 @@ if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC OR (CMAKE_GENERATOR_TOOLSET STREQUAL 
             ${common_flags}
             -Gm-
     )
-    target_compile_options(  
+    zero_multitarget_compile_options(  
         SPIRV-Tools-opt
         PRIVATE 
         PUBLIC
