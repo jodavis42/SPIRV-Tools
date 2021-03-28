@@ -997,7 +997,7 @@ OpFunctionEnd
 %99 = OpFConvert %v4half %15
 OpBranch %65
 %65 = OpLabel
-%96 = OpPhi %v4half %99 %5 %76 %71
+%96 = OpPhi %v4half %99 %5 %100 %71
 %95 = OpPhi %int %int_0 %5 %78 %71
 %70 = OpSLessThan %bool %95 %int_10
 OpLoopMerge %66 %71 None
@@ -1220,6 +1220,181 @@ OpFunctionEnd
   SetAssembleOptions(SPV_TEXT_TO_BINARY_OPTION_PRESERVE_NUMERIC_IDS);
   SinglePassRunAndCheck<ConvertToHalfPass>(defs_before + func_before,
                                            defs_after + func_after, true, true);
+}
+
+TEST_F(ConvertToHalfTest, ConvertToHalfWithClosure) {
+  // Include as many contiguous composite instructions as possible into
+  // half-precision computations
+  //
+  // Compiled with glslang -V -Os
+  //
+  // clang-format off
+  //
+  // #version 410 core
+  //
+  //   precision mediump float;
+  //
+  // layout(location = 1) in vec3 foo;
+  // layout(location = 2) in mat2 bar;
+  // layout(location = 1) out vec3 res;
+  //
+  // vec3 func(vec3 tap, mat2 M) {
+  //   return vec3(M * tap.xy, 1.0);
+  // }
+  //
+  // void main() {
+  //   res = func(foo, bar);
+  // }
+  //
+  // clang-format on
+
+  const std::string defs =
+      R"(OpCapability Shader
+; CHECK: OpCapability Float16
+%1 = OpExtInstImport "GLSL.std.450"
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %res %foo %bar
+OpExecutionMode %main OriginUpperLeft
+OpSource GLSL 410
+OpName %main "main"
+OpName %res "res"
+OpName %foo "foo"
+OpName %bar "bar"
+OpDecorate %res RelaxedPrecision
+; CHECK-NOT: OpDecorate %res RelaxedPrecision
+OpDecorate %res Location 1
+OpDecorate %foo RelaxedPrecision
+; CHECK-NOT: OpDecorate %foo RelaxedPrecision
+OpDecorate %foo Location 1
+OpDecorate %bar RelaxedPrecision
+; CHECK-NOT: OpDecorate %bar RelaxedPrecision
+OpDecorate %bar Location 2
+OpDecorate %34 RelaxedPrecision
+OpDecorate %36 RelaxedPrecision
+OpDecorate %41 RelaxedPrecision
+OpDecorate %42 RelaxedPrecision
+; CHECK-NOT: OpDecorate %34 RelaxedPrecision
+; CHECK-NOT: OpDecorate %36 RelaxedPrecision
+; CHECK-NOT: OpDecorate %41 RelaxedPrecision
+; CHECK-NOT: OpDecorate %42 RelaxedPrecision
+%void = OpTypeVoid
+%3 = OpTypeFunction %void
+%float = OpTypeFloat 32
+%v3float = OpTypeVector %float 3
+%v2float = OpTypeVector %float 2
+%mat2v2float = OpTypeMatrix %v2float 2
+%float_1 = OpConstant %float 1
+%_ptr_Output_v3float = OpTypePointer Output %v3float
+%res = OpVariable %_ptr_Output_v3float Output
+%_ptr_Input_v3float = OpTypePointer Input %v3float
+%foo = OpVariable %_ptr_Input_v3float Input
+%_ptr_Input_mat2v2float = OpTypePointer Input %mat2v2float
+%bar = OpVariable %_ptr_Input_mat2v2float Input
+)";
+
+  const std::string func =
+      R"(%main = OpFunction %void None %3
+%5 = OpLabel
+%34 = OpLoad %v3float %foo
+%36 = OpLoad %mat2v2float %bar
+; CHECK: %48 = OpFConvert %v3half %34
+; CHECK: %49 = OpFConvert %v3half %34
+%41 = OpVectorShuffle %v2float %34 %34 0 1
+; CHECK-NOT: %41 = OpVectorShuffle %v2float %34 %34 0 1
+; CHECK: %41 = OpVectorShuffle %v2half %48 %49 0 1
+%42 = OpMatrixTimesVector %v2float %36 %41
+; CHECK-NOT: %42 = OpMatrixTimesVector %v2float %36 %41
+; CHECK: %55 = OpCompositeExtract %v2float %36 0
+; CHECK: %56 = OpFConvert %v2half %55
+; CHECK: %57 = OpCompositeExtract %v2float %36 1
+; CHECK: %58 = OpFConvert %v2half %57
+; CHECK: %59 = OpCompositeConstruct %mat2v2half %56 %58
+; CHECK: %52 = OpCopyObject %mat2v2float %36
+; CHECK: %42 = OpMatrixTimesVector %v2half %59 %41
+%43 = OpCompositeExtract %float %42 0
+%44 = OpCompositeExtract %float %42 1
+; CHECK-NOT: %43 = OpCompositeExtract %float %42 0
+; CHECK-NOT: %44 = OpCompositeExtract %float %42 1
+; CHECK: %43 = OpCompositeExtract %half %42 0
+; CHECK: %44 = OpCompositeExtract %half %42 1
+%45 = OpCompositeConstruct %v3float %43 %44 %float_1
+; CHECK-NOT: %45 = OpCompositeConstruct %v3float %43 %44 %float_1
+; CHECK: %53 = OpFConvert %float %43
+; CHECK: %54 = OpFConvert %float %44
+; CHECK: %45 = OpCompositeConstruct %v3float %53 %54 %float_1
+OpStore %res %45
+OpReturn
+OpFunctionEnd
+)";
+
+  SetAssembleOptions(SPV_TEXT_TO_BINARY_OPTION_PRESERVE_NUMERIC_IDS);
+  SinglePassRunAndMatch<ConvertToHalfPass>(defs + func, true);
+}
+
+TEST_F(ConvertToHalfTest, RemoveRelaxDec) {
+  // See https://github.com/KhronosGroup/SPIRV-Tools/issues/4117
+
+  // This test is a case where the relax precision decorations need to be
+  // removed, but the body of the function does not change because there are not
+  // arithmetic operations.  So, there is not need for the Float16 capability.
+  const std::string test =
+      R"(
+; CHECK-NOT: OpCapability Float16
+; GLSL seems to generate this decoration on the load of a texture, which seems odd to me.
+; This pass does not currently remove it, and I'm not sure what we should do with it, so I will leave it.
+; CHECK: OpDecorate [[tex:%\w+]] RelaxedPrecision
+; CHECK-NOT: OpDecorate {{%\w+}} RelaxedPrecision
+; CHECK: OpLabel
+; CHECK: [[tex]] = OpLoad {{%\w+}} %sTexture
+; CHECK: [[coord:%\w+]] = OpLoad %v2float
+; CHECK: [[retval:%\w+]] = OpImageSampleImplicitLod %v4float {{%\w+}} [[coord]]
+; CHECK: OpStore %outFragColor [[retval]]
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %outFragColor %v_texcoord
+               OpExecutionMode %main OriginUpperLeft
+               OpSource ESSL 310
+               OpName %main "main"
+               OpName %outFragColor "outFragColor"
+               OpName %sTexture "sTexture"
+               OpName %v_texcoord "v_texcoord"
+               OpDecorate %outFragColor RelaxedPrecision
+               OpDecorate %outFragColor Location 0
+               OpDecorate %sTexture RelaxedPrecision
+               OpDecorate %sTexture DescriptorSet 0
+               OpDecorate %sTexture Binding 0
+               OpDecorate %14 RelaxedPrecision
+               OpDecorate %v_texcoord RelaxedPrecision
+               OpDecorate %v_texcoord Location 0
+               OpDecorate %18 RelaxedPrecision
+               OpDecorate %19 RelaxedPrecision
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%outFragColor = OpVariable %_ptr_Output_v4float Output
+         %10 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %11 = OpTypeSampledImage %10
+%_ptr_UniformConstant_11 = OpTypePointer UniformConstant %11
+   %sTexture = OpVariable %_ptr_UniformConstant_11 UniformConstant
+    %v2float = OpTypeVector %float 2
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+ %v_texcoord = OpVariable %_ptr_Input_v2float Input
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpLoad %11 %sTexture
+         %18 = OpLoad %v2float %v_texcoord
+         %19 = OpImageSampleImplicitLod %v4float %14 %18
+               OpStore %outFragColor %19
+               OpReturn
+               OpFunctionEnd
+)";
+
+  SetAssembleOptions(SPV_TEXT_TO_BINARY_OPTION_PRESERVE_NUMERIC_IDS);
+  auto result = SinglePassRunAndMatch<ConvertToHalfPass>(test, true);
+  EXPECT_EQ(Pass::Status::SuccessWithChange, std::get<1>(result));
 }
 
 }  // namespace

@@ -14,11 +14,12 @@
 
 // Validates correctness of conversion instructions.
 
-#include "source/val/validate.h"
-
 #include "source/diagnostic.h"
 #include "source/opcode.h"
+#include "source/spirv_constant.h"
+#include "source/spirv_target_env.h"
 #include "source/val/instruction.h"
+#include "source/val/validate.h"
 #include "source/val/validation_state.h"
 
 namespace spvtools {
@@ -262,16 +263,25 @@ spv_result_t ConversionPass(ValidationState_t& _, const Instruction* inst) {
                << "Logical addressing not supported: "
                << spvOpcodeString(opcode);
 
-      if (_.addressing_model() ==
-          SpvAddressingModelPhysicalStorageBuffer64EXT) {
+      if (_.addressing_model() == SpvAddressingModelPhysicalStorageBuffer64) {
         uint32_t input_storage_class = 0;
         uint32_t input_data_type = 0;
         _.GetPointerTypeInfo(input_type, &input_data_type,
                              &input_storage_class);
-        if (input_storage_class != SpvStorageClassPhysicalStorageBufferEXT)
+        if (input_storage_class != SpvStorageClassPhysicalStorageBuffer)
           return _.diag(SPV_ERROR_INVALID_DATA, inst)
-                 << "Pointer storage class must be PhysicalStorageBufferEXT: "
+                 << "Pointer storage class must be PhysicalStorageBuffer: "
                  << spvOpcodeString(opcode);
+
+        if (spvIsVulkanEnv(_.context()->target_env)) {
+          if (_.GetBitWidth(result_type) != 64) {
+            return _.diag(SPV_ERROR_INVALID_DATA, inst)
+                   << _.VkErrorID(4710)
+                   << "PhysicalStorageBuffer64 addressing mode requires the "
+                      "result integer type to have a 64-bit width for Vulkan "
+                      "environment.";
+          }
+        }
       }
       break;
     }
@@ -313,16 +323,25 @@ spv_result_t ConversionPass(ValidationState_t& _, const Instruction* inst) {
                << "Logical addressing not supported: "
                << spvOpcodeString(opcode);
 
-      if (_.addressing_model() ==
-          SpvAddressingModelPhysicalStorageBuffer64EXT) {
+      if (_.addressing_model() == SpvAddressingModelPhysicalStorageBuffer64) {
         uint32_t result_storage_class = 0;
         uint32_t result_data_type = 0;
         _.GetPointerTypeInfo(result_type, &result_data_type,
                              &result_storage_class);
-        if (result_storage_class != SpvStorageClassPhysicalStorageBufferEXT)
+        if (result_storage_class != SpvStorageClassPhysicalStorageBuffer)
           return _.diag(SPV_ERROR_INVALID_DATA, inst)
-                 << "Pointer storage class must be PhysicalStorageBufferEXT: "
+                 << "Pointer storage class must be PhysicalStorageBuffer: "
                  << spvOpcodeString(opcode);
+
+        if (spvIsVulkanEnv(_.context()->target_env)) {
+          if (_.GetBitWidth(input_type) != 64) {
+            return _.diag(SPV_ERROR_INVALID_DATA, inst)
+                   << _.VkErrorID(4710)
+                   << "PhysicalStorageBuffer64 addressing mode requires the "
+                      "input integer to have a 64-bit width for Vulkan "
+                      "environment.";
+          }
+        }
       }
       break;
     }
@@ -467,15 +486,40 @@ spv_result_t ConversionPass(ValidationState_t& _, const Instruction* inst) {
                << "Expected input to be a pointer or int or float vector "
                << "or scalar: " << spvOpcodeString(opcode);
 
-      if (result_is_pointer && !input_is_pointer && !input_is_int_scalar)
-        return _.diag(SPV_ERROR_INVALID_DATA, inst)
-               << "Expected input to be a pointer or int scalar if Result Type "
-               << "is pointer: " << spvOpcodeString(opcode);
+      if (_.version() >= SPV_SPIRV_VERSION_WORD(1, 5) ||
+          _.HasExtension(kSPV_KHR_physical_storage_buffer)) {
+        const bool result_is_int_vector = _.IsIntVectorType(result_type);
+        const bool result_has_int32 =
+            _.ContainsSizedIntOrFloatType(result_type, SpvOpTypeInt, 32);
+        const bool input_is_int_vector = _.IsIntVectorType(input_type);
+        const bool input_has_int32 =
+            _.ContainsSizedIntOrFloatType(input_type, SpvOpTypeInt, 32);
+        if (result_is_pointer && !input_is_pointer && !input_is_int_scalar &&
+            !(input_is_int_vector && input_has_int32))
+          return _.diag(SPV_ERROR_INVALID_DATA, inst)
+                 << "Expected input to be a pointer, int scalar or 32-bit int "
+                    "vector if Result Type is pointer: "
+                 << spvOpcodeString(opcode);
 
-      if (input_is_pointer && !result_is_pointer && !result_is_int_scalar)
-        return _.diag(SPV_ERROR_INVALID_DATA, inst)
-               << "Pointer can only be converted to another pointer or int "
-               << "scalar: " << spvOpcodeString(opcode);
+        if (input_is_pointer && !result_is_pointer && !result_is_int_scalar &&
+            !(result_is_int_vector && result_has_int32))
+          return _.diag(SPV_ERROR_INVALID_DATA, inst)
+                 << "Pointer can only be converted to another pointer, int "
+                    "scalar or 32-bit int vector: "
+                 << spvOpcodeString(opcode);
+      } else {
+        if (result_is_pointer && !input_is_pointer && !input_is_int_scalar)
+          return _.diag(SPV_ERROR_INVALID_DATA, inst)
+                 << "Expected input to be a pointer or int scalar if Result "
+                    "Type is pointer: "
+                 << spvOpcodeString(opcode);
+
+        if (input_is_pointer && !result_is_pointer && !result_is_int_scalar)
+          return _.diag(SPV_ERROR_INVALID_DATA, inst)
+                 << "Pointer can only be converted to another pointer or int "
+                    "scalar: "
+                 << spvOpcodeString(opcode);
+      }
 
       if (!result_is_pointer && !input_is_pointer) {
         const uint32_t result_size =

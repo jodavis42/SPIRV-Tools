@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "source/reduce/reducer.h"
-
 #include "source/reduce/reduction_opportunity.h"
 #include "source/reduce/remove_instruction_reduction_opportunity.h"
 #include "test/reduce/reduce_test_util.h"
@@ -26,7 +25,7 @@ using opt::Function;
 using opt::IRContext;
 using opt::Instruction;
 
-// A dumb reduction opportunity finder that finds opportunities to remove global
+// A reduction opportunity finder that finds opportunities to remove global
 // values regardless of whether they are referenced. This is very likely to make
 // the resulting module invalid.  We use this to test the reducer's behavior in
 // the scenario where a bad reduction pass leads to an invalid module.
@@ -44,7 +43,7 @@ class BlindlyRemoveGlobalValuesReductionOpportunityFinder
   // referenced (directly or indirectly) from elsewhere in the module, each such
   // opportunity will make the module invalid.
   std::vector<std::unique_ptr<ReductionOpportunity>> GetAvailableOpportunities(
-      IRContext* context) const final {
+      IRContext* context, uint32_t /*unused*/) const final {
     std::vector<std::unique_ptr<ReductionOpportunity>> result;
     for (auto& inst : context->module()->types_values()) {
       if (inst.HasResultId()) {
@@ -56,7 +55,7 @@ class BlindlyRemoveGlobalValuesReductionOpportunityFinder
   }
 };
 
-// A dumb reduction opportunity that exists at the start of every function whose
+// A reduction opportunity that exists at the start of every function whose
 // first instruction is an OpVariable instruction. When applied, the OpVariable
 // instruction is duplicated (with a fresh result id). This allows each
 // reduction step to increase the number of variables to check if the validator
@@ -102,7 +101,7 @@ class OpVariableDuplicatorReductionOpportunityFinder
   }
 
   std::vector<std::unique_ptr<ReductionOpportunity>> GetAvailableOpportunities(
-      IRContext* context) const final {
+      IRContext* context, uint32_t /*unused*/) const final {
     std::vector<std::unique_ptr<ReductionOpportunity>> result;
     for (auto& function : *context->module()) {
       Instruction* first_instruction = &*function.begin()[0].begin();
@@ -181,19 +180,21 @@ TEST(ValidationDuringReductionTest, CheckInvalidPassMakesNoProgress) {
          %29 = OpAccessChain %28 %27 %9
          %30 = OpLoad %24 %29
          %32 = OpFOrdGreaterThan %22 %30 %31
-               OpSelectionMerge %34 None
+               OpSelectionMerge %90 None
                OpBranchConditional %32 %33 %46
          %33 = OpLabel
          %40 = OpFAdd %24 %71 %30
          %45 = OpISub %6 %73 %21
-               OpBranch %34
+               OpBranch %90
          %46 = OpLabel
          %50 = OpFMul %24 %71 %30
          %54 = OpSDiv %6 %73 %21
-               OpBranch %34
-         %34 = OpLabel
+               OpBranch %90
+         %90 = OpLabel
          %77 = OpPhi %6 %45 %33 %54 %46
          %76 = OpPhi %24 %40 %33 %50 %46
+               OpBranch %34
+         %34 = OpLabel
          %57 = OpIAdd %6 %70 %56
                OpBranch %10
          %12 = OpLabel
@@ -303,19 +304,21 @@ TEST(ValidationDuringReductionTest, CheckNotAlwaysInvalidCanMakeProgress) {
          %29 = OpAccessChain %28 %27 %9
          %30 = OpLoad %24 %29
          %32 = OpFOrdGreaterThan %22 %30 %31
-               OpSelectionMerge %34 None
+               OpSelectionMerge %90 None
                OpBranchConditional %32 %33 %46
          %33 = OpLabel
          %40 = OpFAdd %24 %71 %30
          %45 = OpISub %6 %73 %21
-               OpBranch %34
+               OpBranch %90
          %46 = OpLabel
          %50 = OpFMul %24 %71 %30
          %54 = OpSDiv %6 %73 %21
-               OpBranch %34
-         %34 = OpLabel
+               OpBranch %90
+         %90 = OpLabel
          %77 = OpPhi %6 %45 %33 %54 %46
          %76 = OpPhi %24 %40 %33 %50 %46
+               OpBranch %34
+         %34 = OpLabel
          %57 = OpIAdd %6 %70 %56
                OpBranch %10
          %12 = OpLabel
@@ -392,19 +395,21 @@ TEST(ValidationDuringReductionTest, CheckNotAlwaysInvalidCanMakeProgress) {
          %29 = OpAccessChain %28 %27 %9
          %30 = OpLoad %24 %29
          %32 = OpFOrdGreaterThan %22 %30 %31
-               OpSelectionMerge %34 None
+               OpSelectionMerge %90 None
                OpBranchConditional %32 %33 %46
          %33 = OpLabel
          %40 = OpFAdd %24 %71 %30
          %45 = OpISub %6 %73 %21
-               OpBranch %34
+               OpBranch %90
          %46 = OpLabel
          %50 = OpFMul %24 %71 %30
          %54 = OpSDiv %6 %73 %21
-               OpBranch %34
-         %34 = OpLabel
+               OpBranch %90
+         %90 = OpLabel
          %77 = OpPhi %6 %45 %33 %54 %46
          %76 = OpPhi %24 %40 %33 %50 %46
+               OpBranch %34
+         %34 = OpLabel
          %57 = OpIAdd %6 %70 %56
                OpBranch %10
          %12 = OpLabel

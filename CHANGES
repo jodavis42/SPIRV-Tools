@@ -1,7 +1,336 @@
 Revision history for SPIRV-Tools
 
-v2019.5-dev 2019-08-08
+v2021.0-dev 2021-02-16
+ - Start SPIRV-Tools v2021.0-dev
+
+v2020.7 2021-02-16
+ - General
+    - Support pending Intel extensions (#4116)
+    - Remove WebGPU support (#4108)
+ - Validator
+    - Vulkan image gather constant component (#4133)
+    - Add Vulkan PSB64 convert VUID (#4122)
+    - Validate SPV_KHR_workgroup_memory_explicit_layout (#4128)
+    - Validate VK_KHR_zero_initialize_workgroup_memory (#4124)
+    - Add Vulkan image gather offset VUID (#4118)
+    - Label Vulkan atomic semantics VUIDs (#4120)
+    - Label VUID 04662 (#4123)
+    - Label VUID 04683 (#4121)
+    - Add Vulkan EXT builtins (#4115)
+    - Validate Sampled=1 for Vulkan ImageQuerySizeLod, ImageQueryLevels, ImageQueryLod (#4103)
+    - Add Vulkan Memory Scope VUs (#4106)
+    - Add Vulkan Addressing Model check (#4107)
+    - Vulkan atomic storage class (#4079)
+    - Label standalone Vulkan VUID (#4091)
+    - Add Vulkan decroation VUID (#4090)
+    - Add Vulkan FP Mode VUID (#4088)
+    - Fix Vulkan image sampled check (#4085)
+    - Add Vulkan ForwardPointer VUID (#4089)
+    - Add Vulkan ImageTexelPointer format check (#4087)
+    - Add Vulkan Group Operation VUID (#4086)
+    - Add first StandAlone VUID 04633 (#4077)
+    - Add Subgroup VUIDs (#4074)
+    - validate return type of OpImageRead (#4072)
+    - tighter validation of multisampled images (#4059)
+    - validate OpTypeImage Sampled values for environemnts (#4064)
+    - validate StorageImageMultisampled capability (#4062)
+    - Add last TessLevelOuter and TessLevelInner VUID (#4055)
+    - Add last ClipDistance and CullDistance VUID (#4054)
+    - Add last ViewportIndex and Layer VUID (#4053)
+    - Add last Position VUID (#4052)
+    - Allow forward pointer to be used in types generally (#4044)
+ - Optimizer
+    - Mark module as modified if convert-to-half removes decorations. (#4127)
+    - Fix binding number calculation in desc sroa (#4095)
+    - Run DCE when SPV_KHR_shader_clock is used (#4049)
+ - Debug Info
+    - Set correct scope and line info for DebugValue (#4125)
+    - Avoid integrity check failures caused by propagating line instructions (#4096)
+ - Linker
+    - Linker usability improvements (#4084)
+ - Instrumentation
+    - Generate differentiated error codes for buffer oob checking (#4097)
+ - Fuzz
+    - Fix OpPhi handling in DuplicateRegionWithSelection (#4065)
+
+v2020.6 2020-12-07
+ - General
+    CMake: Add SPIRV_TOOLS_BUILD_STATIC flag (#3910)
+ - Disassembler
+    Add some context comments to disassembly. (#3847)
+ - Optimizer
+   - Take new (raytracing) termination instructions into account. (#4050)
+   - Do run DCE if SPV_KHR_ray_query is used. (#4047)
+   - Handle 8-bit index in elim dead member (#4043)
+   - Add texel buffer out-of-bounds checking instrumentation (#4038)
+   - Update MeshShadingNV dependencies (and land Ray tracing updates) (#4028)
+   - Fix buffer oob instrumentation for matrix refs (#4025)
+   - Fix SSA re-writing in the presence of variable pointers. (#4010)
+   - Add support to prevent functions from being inlined if they have
+     DontInline flag (#3858)
+   - Add SPV_EXT_shader_image_int64 (#3852)
+   - Support SPV_KHR_fragment_shading_rate (#3943)
+   - Fix use-after-move in val/validate.cpp (#3848)
+ - Debug Info
+   - properly preserve DebugValue indexes operand (#4022)
+   - Add DebugValue for invisible store in single_store_elim (#4002)
+   - Propagate OpLine to all applied instructions in spirv-opt (#3951)
+   - Add DebugValue for DebugDecl invisible to value assignment (#3973)
+   - Add DebugValue for function param regardless of scope (#3923)
+   - Debug info preservation in convert-local-access-chains pass (#3835)
+   - Debug info preservation in redundancy-elimination pass (#3839)
+   - Debug info preservation in if-conversion pass (#3861)
+ - Validator
+   - Add validation support for the ray tracing built-in variables (#4041)
+   - Use less stack space when validating Vulkan builtins (#4019)
+   - Fix SPV_KHR_fragment_shading_rate VUID label (#4014)
+   - Label Layer and ViewportIndex VUIDs (#4013)
+   - Allow the ViewportIndex and Layer built-ins on SPIR-V 1.5 (#3986)
+   - Fix validation of OpPhi instructions (#3919)
+ - Fuzz
+   - Fix facts arising from CompositeConstruct (#4034)
+   - Do not flatten conditionals that create synonyms (#4030)
+   - Add support for reining in rogue fuzzer passes (#3987)
+   - Fix assertion failure in FuzzerPassAddCompositeExtract (#3995)
+   - Fix invalid equation facts (#4009)
+   - Fix bugs in TransformationFlattenConditionalBranch (#4006)
+   - Fix bug related to transformation applicability (#3990)
+   - Add expand vector reduction transformation (#3869)
+   - Add FuzzerPassAddCompositeExtract (#3904)
+   - Fix mismatch with shrinker step limit (#3985)
+   - Fix off-by-one error in replayer (#3982)
+   - Get order right for OpSelect arguments (#3974)
+   - Do not add synonym-creating loops in dead blocks (#3975)
+   - Skip OpTypeSampledImage when propagating up (#3976)
+   - Pass OpUndef in function call if needed (#3978)
+   - Fix off-by-one in TransformationCompositeConstruct (#3979)
+   - Tolerate absent ids in data synonym fact management (#3966)
+   - Fix to id availability (#3971)
+   - Fix operand types (#3962)
+   - Don't flatten conditional if condition is irrelevant (#3944)
+   - Do not produce OpPhis of type OpTypeSampledImage (#3964)
+   - Restrict fuzzer pass to reachable blocks (#3970)
+   - Handle more types when extending OpPhi instructions (#3969)
+   - Skip early terminator wrappers when merging returns (#3968)
+   - Avoid irrelevant constants in synonym-creating loops (#3967)
+   - Skip dead blocks in FuzzerPassAddOpPhiSynonyms (#3965)
+   - Avoid the type manager when looking for struct types (#3963)
+   - Fix to TransformationDuplicateRegionWithSelection (#3941)
+   - Skip OpFunction when replacing irrelevant ids (#3932)
+   - Use component-wise selectors when flattening conditional branches (#3921)
+   - Avoid void struct member when outlining functions (#3936)
+   - Do not allow Block-decorated structs when adding parameters (#3931)
+   - Fix to operand id type (#3937)
+   - Handle dead blocks in TransformationEquationInstruction (#3933)
+   - Do not allow sampled image load when flattening conditionals (#3930)
+   - Take care of OpPhi instructions when inlining (#3939)
+   - Fix to TransformationInlineFunction (#3913)
+   - Wrap early terminators before merging returns (#3925)
+   - Lower probability of adding bit instruction synonyms (#3917)
+   - Fix handling of OpPhi in FlattenConditionalBranch (#3916)
+   - Avoid creating blocks without parents (#3908)
+   - Do not allow creation of constants of block-decorated structs (#3903)
+   - Fixes related to irrelevant ids (#3901)
+   - Fix to transformation that adds a synonym via a loop (#3898)
+   - Fix to duplicate region with selection (#3896)
+   - Do not expose synonym facts for non-existent ids (#3891)
+   - Do not add synonyms involving irrelevant ids (#3890)
+   - Do not replace irrelevant ids that are not in blocks (#3892)
+   - Wrap OpKill and similar in function calls (#3884)
+   - Integrate spirv-reduce with shrinker (#3849)
+   - Report fresh ids in transformations (#3856)
+   - Support OpNot bit instruction case (#3841)
+   - Return IR and transformation context after replay (#3846)
+
+v2020.5 2020-09-22
+ - General
+   - Enable building with BUILD_SHARED_LIBS=1 (#3490)
+   - Avoid using /MP4 for clang on windows. (#3662)
+   - Fix compiler error on macOS with XCode12. (#3836)
+ - Optimizer
+   - Preserve OpenCL.DebugInfo.100 through private-to-local pass (#3571)
+   - Preserve debug info in scalar replacement pass (#3461)
+   - Debug info preservation in loop-unroll pass (#3548)
+   - Preserve debug info in dead-insert-elim pass (#3652)
+   - Improve non-semantic instruction handling in the optimizer (#3693)
+   - Let ADCE pass check DebugScope (#3703)
+   - Add undef for inlined void function (#3720)
+   - Fix SSA-rewrite to remove DebugDeclare for variables without loads (#3719)
+   - Handle DebugScope in compact-ids pass (#3724)
+   - Add buffer oob check to bindless instrumentation (#3800)
+ - Validator
+   - Update OpenCL capabilities validation (#3149)
+   - Validator support for non-semantic clspv reflection (#3618)
+   - OpenCL.DebugInfo.100 DebugTypeArray with variable size (#3549)
+   - Only validation locations for appropriate execution models (#3656)
+   - Validate more OpenCL.DebugInfo.100 instructions (#3684)
+   - Allow DebugTypeTemplate for Type operand (#3702)
+   - spirv-val: Add Vulkan VUID labels to BuiltIn (#3756)
+   - Allow SPV_KHR_8bit_storage extension. (#3780)
+   - Validate SPIRV Version number when parsing binary header (#3834)
+ - Reduce
+   - Support reducing a specific function (#3774)
+ - Fuzz
+   - adds TransformationReplaceCopyObjectWithStoreLoad (#3567)
+   - adds TransformationReplaceCopyMemoryWithLoadStore (#3575)
+   - adds TransformationReplaceLoadStoreWithCopyMemory (#3586)
+   - Implement the OpOuterProduct linear algebra case (#3617)
+   - Pass to replace int operands with ints of opposite signedness (#3612)
+   - TransformationMoveInstructionDown (#3477)
+   - Add TransformationMakeVectorOperationDynamic (#3597)
+   - TransformationReplaceAddSubMulWithCarryingExtended (#3598)
+   - FuzzerPassPropagateInstructionsUp (#3478)
+   - add FuzzerPassAddCompositeInserts (#3606)
+   - Add inline function transformation (#3517)
+   - Transformation to replace the use of an irrelevant id (#3697)
+   - Add SPIRV_FUZZ_PROTOC_COMMAND (#3789)
+   - Add TransformationDuplicateRegionWithSelection (#3773)
+   - Transformation to flatten conditional branch (#3667)
+   - Handle OpPhis in TransformationInlineFunction (#3833)
+   - Create synonym of int constant using a loop (#3790)
+   - Support dead blocks in TransformationAddSynonym (#3832)
+ - Linker
+
+v2020.4 2020-07-22
+ - General
+   - Changed variable names to be more descriptive (#3433)
+   - Add support to GPU-AV instrumentation for Task and Mesh shaders (#3512)
+   - Permit Simple and GLSL450 memory model in WEBGPU_0 (#3463)
+   - Support SPV_KHR_terminate_invocation (#3568)
+ - Optimizer
+   - Preserving debug information in optimizations
+     (#3389,#3420,#3425,#3356,#3459,#3444,#3492,#3451,#3497i,#3498,#3542)
+   - Eliminate branches with condition of OpConstantNull (#3438)
+   - Use structured order to unroll loops. (#3443)
+   - Updated desc_sroa to support flattening structures (#3448)
+   - Support OpCompositeExtract pattern in desc_sroa (#3456)
+   - Fix ADCE pass bug for mulitple entries (#3470)
+     - Sink pointer instructions in merge return (#3569)
+ - Validator
+   - Validate location assignments (#3308)
+     - Fix reachability in the validator (#3541)
+ - Reduce
+ - Fuzz
+   - Add support for OpSpecConstant* (#3373)
+   - Add replace linear algebra instruction transformation (#3402)
+   - Implement vector shuffle fuzzer pass (#3412)
+   - Swap operands in OpBranchConditional (#3423)
+   - Permute OpPhi instruction operands (#3421)
+   - Add FuzzerPassAddCopyMemoryInstructions (#3391)
+   - TransformationInvertComparisonOperator (#3475)
+   - Add variables with workgroup storage class (#3485)
+   - Add image sample unused components transformation (#3439)
+   - TransformationReplaceParameterWithGlobal (#3434)
+     - Support adding dead break from back-edge block (#3519)
+       - Fuzzer pass to interchange zero-like constants (#3524)
+ - Linker
+
+v2020.3 2020-05-27
+ - General
+   - Prevent Effcee from installing things when building spirv-tools with testing enabled (#3256)
+   - Update acorn version (#3294)
+   - If SPIRV-Headers is in our tree, include it as subproject (#3299)
+   - allow cross compiling for Windows Store, UWP, etc. (#3330)
+ - Optimizer
+   - Remove deprecated interfaces from instrument passes (#3361)
+   - Preserve debug info in inline pass (#3349)
+   - Handle more cases in dead member elim (#3289)
+   - Preserve debug info in eliminate-dead-functions (#3251)
+   - Fix Struct CFG analysis for single block loop (#3293)
+   - Add tests for recently added command line option (#3297)
+   - Consider sampled images as read-only storage (#3295)
+   - Allow various validation options to be passed to spirv-opt (#3314)
+   - Add debug information analysis (#3305)
+   - Preserve debug info for wrap-opkill (#3331)
+   - refactor inlining pass (#3328)
+   - Add unrolling to performance passes (#3082)
+ - Validator
+   - Add validation support for ImageGatherBiasLodAMD (#3363)
+   - Validate ShaderCallKHR memory scope (#3332)
+   - Validate Buffer and BufferBlock apply only to struct types (#3259)
+ - Reduce
+   - increase default step limit (#3327)
+   - Remove unused uniforms and similar (#3321)
+ - Fuzz
+   - Add support for StorageBuffer (#3348)
+   - Add validator options (#3254)
+   - Limit adding of new variables to 'basic' types (#3257)
+   - Transformation to add OpConstantNull (#3273)
+   - Handling of more fuzzing opportunities (#3277, #3280, #3281, #3290, #3292)
+   - Respect rules for OpSampledImage (#3287)
+   - Do not outline regions that produce pointer outputs (#3291)
+ - Linker
+
+v2020.2 2020-03-26
  - General:
+   - Support extended instructions in the vscode language server
+   - Make spvOpcodeString part of the public API (#3174)
+   - Added guide to writing a spirv-fuzz fuzzer pass (#3190)
+   - Add support for KHR_ray_{query,tracing} extensions (#3235)
+ - Optimizer
+   - Debug Printf support (#3215)
+   - Add data structure for DebugScope, DebugDeclare in spirv-opt (#3183)
+   - Fix identification of Vulkan images and buffers (#3253)
+ - Validator
+   - Add support for SPV_AMD_shader_image_load_store_lod (#3186)
+   - Add validation rules for OpenCL.DebugInfo.100 extension (#3133)
+   - Adding WebGPU specific Workgroup scope rule (#3204)
+   - Disallow phis of images, samplers and sampled images (#3246)
+ - Reduce
+ - Fuzz
+   - Fuzzer passes to add local and global variables (#3175)
+   - Add fuzzer passes to add loads/stores (#3176)
+   - Fuzzer pass to add function calls (#3178)
+   - Fuzzer pass that adds access chains (#3182)
+   - Fuzzer pass to add equation instructions (#3202)
+   - Add swap commutable operands transformation (#3205)
+   - Add fuzzer pass to permute function parameters (#3212)
+   - Allow OpPhi operand to be replaced with a composite synonym (#3221)
+ - Linker
+
+v2020.1 2020-02-03
+ - General:
+   - Add support for SPV_KHR_non_semantic_info (#3110)
+   - Support OpenCL.DebugInfo.100 extended instruction set (#3080)
+   - Added support for Vulkan 1.2
+   - Add API function to better handle getting the necessary environment (#3142)
+   - Clarify mapping of target env to SPIR-V version (#3150)
+   - Implement constant folding for many transcendentals (#3166)
+ - Optimizer
+   - Change default version for CreatInstBindlessCheckPass to 2 (#3096, #3119)
+   - Better handling of OpLine on merge blocks (#3130)
+   - Use placeholder switch instead of placeholder loop in MergeReturn pass. (#3151)
+   - Handle TimeAMD in AmdExtensionToKhrPass. (#3168)
+ - Validator
+   - Fix structured exit validation (#3141)
+ - Reduce
+ - Fuzz
+   - Fuzzer pass to merge blocks (#3097)
+   - Transformation to add a new function to a module (#3114)
+   - Add fuzzer pass to perform module donation (#3117)
+   - Fuzzer passes to create and branch to new dead blocks (#3135)
+   - Fuzzer pass to add composite types (#3171)
+ - Linker:
+   - Remove names and decorations of imported symbols (#3081)
+
+v2019.5 2019-12-11
+ - General:
+   - Export SPIRV-Tools targets on installation
+   - SPIRV-Tools support for SPIR-V 1.5 (#2865)
+   - Add WebGPU SPIR-V Assembler in JavaScript. (#2876)
+   - Add Bazel build configuration. (#2891)
+   - Add support for building with emscripten (#2948)
+   - Update SPIR-V binary header test for SPIR-V 1.5 (#2967)
+   - Add fuzzer for spirv-as call path (#2976)
+   - Improved CMake install step. (#2963)
+   - Add fuzzer for spirv-dis call path (#2977)
+   - Ensure timestamp does not vary with timezone. (#2982)
+   - Add a vscode extension for SPIR-V disassembly files (#2987)
+   - Add iOS as a supported platform (#3001)
+   - utils/vscode: Add SPIR-V language server support
+   - Respect CMAKE_INSTALL_LIBDIR in installed CMake files (#3054)
+   - Permit the debug instructions in WebGPU SPIR-V (#3063)
+   - Add support for Fuchsia. (#3062)
  - Optimizer
    - Add descriptor array scalar replacement (#2742)
    - Add pass to wrap OpKill in a function call (#2790)
@@ -9,17 +338,63 @@ v2019.5-dev 2019-08-08
    - Add pass to replace AMD shader ballot extension (#2811)
    - Add pass to make Float32 operation relax precision (#2808)
    - Add pass to make relax precision operation Float16 (#2808)
+   - Add pass to replace uses of 3 AMD extensions (#2814)
+   - Fold Min, Max, and Clamp instructions. (#2836)
+   - Better handling of OpKill in continues (#2842,#2922,#2933)
+   - Enable OpTypeCooperativeMatrix specialization (#2927)
+   - Support constant-folding UConvert and SConvert (#2960)
+   - Update Offset to ConstOffset bitmask if operand is constant. (#3024)
+   - Improve RegisterSizePasses (#3059)
+   - Folding: perform add and sub on mismatched integer types (#3084)
+   - Graphics robust access: use signed clamp (#3073)
    Fixes:
-   Instrument: Fix version 2 output record write for tess eval shaders. (#2782)
-   Instrument: Add support for Buffer Device Address extension (#2792)
-   Fix check for changed binary in API call. (#2798)
+   - Instrument: Fix version 2 output record write for tess eval shaders. (#2782)
+   - Instrument: Add support for Buffer Device Address extension (#2792)
+   - Fix check for changed binary in API call. (#2798)
+   - For WebGPU<->Vulkan optimization, set correct execution environment (#2834)
+   - Handle OpConstantNull in copy-prop-arrays. (#2870)
+   - Use OpReturn* in wrap-opkill (#2886)
  - Validator
+   - Add generic builtin validation of target (#2843)
+   - Extra resource interface validation (#2864)
+   - Adding valilidation checks for OpEntryPoint duplicate names and execution mode (#2862)
+   - Relaxed bitcast with pointers (#2878)
+   - Validate physical storage buffer restrictions (#2930)
+   - Add SPV_KHR_shader_clock validation (#2879, #3013)
+   - Validate that selections are structured (#2962)
+   - Disallow use of OpCompositeExtract/OpCompositeInsert with no indices (#2980)
+   - Check that derivatives operate on 32-bit values (#2983)
+   - Validate array stride does not cause overlap (#3028)
+   - Validate nested constructs (#3068)
    Fixes:
-   Fix validation of constant matrices (#2794)
-   Update "remquor" validation
+   - Fix validation of constant matrices (#2794)
+   - Update "remquor" validation
+   - Only allow previously declared forward refs in structs (#2920)
  - Reduce
    - Remove relaxed precision decorations (#2797)
+   - Reduce/fuzz: improve command line args (#2932)
+   - Improve remove unref instr pass (#2945)
    Fixes:
+ - Fuzz
+   - Fix add-dead-break and add-dead-continue passes to respect dominance (#2838)
+   - Add fuzzer pass to copy objects (#2853)
+   - Add fuzzer pass to replace ids with synonyms (#2857)
+   - Allow validation during spirv-fuzz replay (#2873)
+   - Employ the "swarm testing" idea in spirv-fuzz (#2890)
+   - reduce/fuzz: improve command line args (#2932)
+   - option to convert shader into a form that renders red (#2934)
+   - Add fuzzer pass to change selection controls (#2944)
+   - add transformation and pass to construct composites (#2941)
+   - Add fuzzer pass to change loop controls (#2949)
+   - Add fuzzer pass to change function controls (#2951)
+   - Add fuzzer pass to add NoContraction decorations (#2950)
+   - Add missing functionality for matrix composites (#2974)
+   - Fuzzer pass to adjust memory access operands (#2968)
+   - Transformation to extract from a composite object (#2991)
+   - Vector shuffle transformation (#3015)
+   - Improve debugging facilities (#3074)
+   - Function outlining fuzzer pass (#3078)
+
 
 v2019.4 2019-08-08
  - General:
@@ -251,7 +626,7 @@ v2018.6 2018-11-07
  - Optimizer
    - Unrolling loops marked for unrolling in the legalization passes.
    - Improved the compile time of loop unrolling.
-   - Changee merge-return to create a dummy loop around the function.
+   - Changee merge-return to create a placeholder loop around the function.
    - Small improvement to merge-blocks to allow it to merge more often.
    - Enforce an upper bound for the ids, and add option to set it.
    - #1966: Report error if there are unreachable block before running merge return

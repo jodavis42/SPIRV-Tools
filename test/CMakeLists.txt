@@ -100,8 +100,10 @@ set(TEST_SOURCES
   diagnostic_test.cpp
   enum_string_mapping_test.cpp
   enum_set_test.cpp
+  ext_inst.cldebug100_test.cpp
   ext_inst.debuginfo_test.cpp
   ext_inst.glsl_test.cpp
+  ext_inst.non_semantic_test.cpp
   ext_inst.opencl_test.cpp
   fix_word_test.cpp
   generator_magic_number_test.cpp
@@ -157,12 +159,12 @@ spvtools_pch(TEST_SOURCES pch_test)
 add_spvtools_unittest(
   TARGET spirv_unit_tests
   SRCS ${TEST_SOURCES}
-  LIBS ${SPIRV_TOOLS})
+  LIBS ${SPIRV_TOOLS_FULL_VISIBILITY})
 
 add_spvtools_unittest(
   TARGET c_interface
   SRCS c_interface_test.cpp
-  LIBS ${SPIRV_TOOLS})
+  LIBS ${SPIRV_TOOLS_FULL_VISIBILITY})
 
 add_spvtools_unittest(
   TARGET c_interface_shared
@@ -179,7 +181,7 @@ if (${SPIRV_TIMER_ENABLED})
 add_spvtools_unittest(
   TARGET timer
   SRCS timer_test.cpp
-  LIBS ${SPIRV_TOOLS})
+  LIBS ${SPIRV_TOOLS_FULL_VISIBILITY})
 endif()
 
 

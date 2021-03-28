@@ -157,6 +157,7 @@ TEST_F(ValidateStorage, GenericVariableOutsideFunction) {
   const auto str = R"(
           OpCapability Kernel
           OpCapability Linkage
+          OpCapability GenericPointer
           OpMemoryModel Logical OpenCL
 %intt   = OpTypeInt 32 0
 %ptrt   = OpTypePointer Function %intt
@@ -172,6 +173,7 @@ TEST_F(ValidateStorage, GenericVariableInsideFunction) {
   const auto str = R"(
           OpCapability Shader
           OpCapability Linkage
+          OpCapability GenericPointer
           OpMemoryModel Logical GLSL450
 %intt   = OpTypeInt 32 1
 %voidt  = OpTypeVoid
@@ -184,7 +186,7 @@ TEST_F(ValidateStorage, GenericVariableInsideFunction) {
           OpFunctionEnd
 )";
   CompileSuccessfully(str);
-  ASSERT_EQ(SPV_ERROR_INVALID_BINARY, ValidateInstructions());
+  EXPECT_EQ(SPV_ERROR_INVALID_BINARY, ValidateInstructions());
   EXPECT_THAT(getDiagnosticString(),
               HasSubstr("OpVariable storage class cannot be Generic"));
 }
@@ -247,72 +249,6 @@ TEST_F(ValidateStorage, RelaxedLogicalPointerFunctionParamBad) {
   EXPECT_THAT(getDiagnosticString(),
               HasSubstr("OpFunctionCall Argument <id> '"));
 }
-
-std::string GetVarDeclStr(const std::string& storage_class) {
-  if (storage_class != "Output" && storage_class != "Private" &&
-      storage_class != "Function") {
-    return "%var    = OpVariable %ptrt " + storage_class + "\n";
-  } else {
-    return "%var    = OpVariable %ptrt " + storage_class + " %null\n";
-  }
-}
-
-TEST_P(ValidateStorageClass, WebGPU) {
-  std::string storage_class = std::get<0>(GetParam());
-  bool is_local = std::get<1>(GetParam());
-  bool is_valid = std::get<2>(GetParam());
-  std::string error = std::get<3>(GetParam());
-
-  std::string str = R"(
-          OpCapability Shader
-          OpCapability VulkanMemoryModelKHR
-          OpExtension "SPV_KHR_vulkan_memory_model"
-          OpMemoryModel Logical VulkanKHR
-          OpEntryPoint Fragment %func "func"
-          OpExecutionMode %func OriginUpperLeft
-%intt   = OpTypeInt 32 1
-%voidt  = OpTypeVoid
-%vfunct = OpTypeFunction %voidt
-%null   = OpConstantNull %intt
-)";
-  str += "%ptrt   = OpTypePointer " + storage_class + " %intt\n";
-  if (!is_local) str += GetVarDeclStr(storage_class);
-  str += R"(
-%func   = OpFunction %voidt None %vfunct
-%funcl  = OpLabel
-)";
-  if (is_local) str += GetVarDeclStr(storage_class);
-  str += R"(
-OpReturn
-OpFunctionEnd
-)";
-
-  CompileSuccessfully(str, SPV_ENV_WEBGPU_0);
-  if (is_valid) {
-    ASSERT_EQ(SPV_SUCCESS, ValidateInstructions(SPV_ENV_WEBGPU_0));
-  } else {
-    ASSERT_EQ(SPV_ERROR_INVALID_BINARY, ValidateInstructions(SPV_ENV_WEBGPU_0));
-    EXPECT_THAT(getDiagnosticString(), HasSubstr(error));
-  }
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    StorageClass, ValidateStorageClass,
-    Values(std::make_tuple("UniformConstant", false, true, ""),
-           std::make_tuple("Uniform", false, true, ""),
-           std::make_tuple("StorageBuffer", false, true, ""),
-           std::make_tuple("Input", false, true, ""),
-           std::make_tuple("Output", false, true, ""),
-           std::make_tuple("Image", false, true, ""),
-           std::make_tuple("Workgroup", false, true, ""),
-           std::make_tuple("Private", false, true, ""),
-           std::make_tuple("Function", true, true, ""),
-           std::make_tuple(
-               "CrossWorkgroup", false, false,
-               "For WebGPU, OpTypePointer storage class must be one of"),
-           std::make_tuple(
-               "PushConstant", false, false,
-               "For WebGPU, OpTypePointer storage class must be one of")));
 
 }  // namespace
 }  // namespace val

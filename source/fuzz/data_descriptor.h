@@ -15,23 +15,32 @@
 #ifndef SOURCE_FUZZ_DATA_DESCRIPTOR_H_
 #define SOURCE_FUZZ_DATA_DESCRIPTOR_H_
 
-#include "source/fuzz/protobufs/spirvfuzz_protobufs.h"
-
+#include <ostream>
 #include <vector>
+
+#include "source/fuzz/protobufs/spirvfuzz_protobufs.h"
 
 namespace spvtools {
 namespace fuzz {
 
 // Factory method to create a data descriptor message from an object id and a
 // list of indices.
-protobufs::DataDescriptor MakeDataDescriptor(uint32_t object,
-                                             std::vector<uint32_t>&& indices);
+protobufs::DataDescriptor MakeDataDescriptor(
+    uint32_t object, const std::vector<uint32_t>& indices);
+
+// Hash function for data descriptors.
+struct DataDescriptorHash {
+  size_t operator()(const protobufs::DataDescriptor* data_descriptor) const;
+};
 
 // Equality function for data descriptors.
 struct DataDescriptorEquals {
   bool operator()(const protobufs::DataDescriptor* first,
                   const protobufs::DataDescriptor* second) const;
 };
+
+std::ostream& operator<<(std::ostream& out,
+                         const protobufs::DataDescriptor& data_descriptor);
 
 }  // namespace fuzz
 }  // namespace spvtools

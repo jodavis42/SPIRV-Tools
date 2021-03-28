@@ -60,8 +60,7 @@ class PassTest : public TestT {
   // from pass Process() function.
   std::tuple<std::vector<uint32_t>, Pass::Status> OptimizeToBinary(
       Pass* pass, const std::string& original, bool skip_nop) {
-    context_ =
-        std::move(BuildModule(env_, consumer_, original, assemble_options_));
+    context_ = BuildModule(env_, consumer_, original, assemble_options_);
     EXPECT_NE(nullptr, context()) << "Assembling failed for shader:\n"
                                   << original << std::endl;
     if (!context()) {
@@ -177,9 +176,11 @@ class PassTest : public TestT {
   // result, using checks parsed from |original|.  Always skips OpNop.
   // This does *not* involve pass manager.  Callers are suggested to use
   // SCOPED_TRACE() for better messages.
+  // Returns a tuple of disassembly string and the boolean value from the pass
+  // Process() function.
   template <typename PassT, typename... Args>
-  void SinglePassRunAndMatch(const std::string& original, bool do_validation,
-                             Args&&... args) {
+  std::tuple<std::string, Pass::Status> SinglePassRunAndMatch(
+      const std::string& original, bool do_validation, Args&&... args) {
     const bool skip_nop = true;
     auto pass_result = SinglePassRunAndDisassemble<PassT>(
         original, skip_nop, do_validation, std::forward<Args>(args)...);
@@ -188,6 +189,7 @@ class PassTest : public TestT {
     EXPECT_EQ(effcee::Result::Status::Ok, match_result.status())
         << match_result.message() << "\nChecking result:\n"
         << disassembly;
+    return pass_result;
   }
 
   // Runs a single pass of class |PassT| on the binary assembled from the
@@ -197,8 +199,7 @@ class PassTest : public TestT {
   // messages.
   template <typename PassT, typename... Args>
   void SinglePassRunAndFail(const std::string& original, Args&&... args) {
-    context_ =
-        std::move(BuildModule(env_, consumer_, original, assemble_options_));
+    context_ = BuildModule(env_, consumer_, original, assemble_options_);
     EXPECT_NE(nullptr, context()) << "Assembling failed for shader:\n"
                                   << original << std::endl;
     std::ostringstream errs;
@@ -235,8 +236,7 @@ class PassTest : public TestT {
   void RunAndCheck(const std::string& original, const std::string& expected) {
     assert(manager_->NumPasses());
 
-    context_ =
-        std::move(BuildModule(env_, nullptr, original, assemble_options_));
+    context_ = BuildModule(env_, nullptr, original, assemble_options_);
     ASSERT_NE(nullptr, context());
 
     context()->set_preserve_bindings(OptimizerOptions()->preserve_bindings_);

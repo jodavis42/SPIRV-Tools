@@ -199,11 +199,11 @@ std::string ACCheck(const std::string& access_chain_inst,
                     const std::string& original,
                     const std::string& transformed) {
   return "\n ; CHECK: %ac = " + access_chain_inst + " %ptr_ty %var" +
-         (transformed.size() ? " " : "") + transformed +
+         (transformed.empty() ? "" : " ") + transformed +
          "\n ; CHECK-NOT: " + access_chain_inst +
          "\n ; CHECK-NEXT: OpReturn"
          "\n %ac = " +
-         access_chain_inst + " %ptr_ty %var " + (original.size() ? " " : "") +
+         access_chain_inst + " %ptr_ty %var " + (original.empty() ? "" : " ") +
          original + "\n";
 }
 
@@ -211,11 +211,11 @@ std::string ACCheckFail(const std::string& access_chain_inst,
                         const std::string& original,
                         const std::string& transformed) {
   return "\n ; CHECK: %ac = " + access_chain_inst + " %ptr_ty %var" +
-         (transformed.size() ? " " : "") + transformed +
+         (transformed.empty() ? "" : " ") + transformed +
          "\n ; CHECK-NOT: " + access_chain_inst +
          "\n ; CHECK-NOT: OpReturn"
          "\n %ac = " +
-         access_chain_inst + " %ptr_ty %var " + (original.size() ? " " : "") +
+         access_chain_inst + " %ptr_ty %var " + (original.empty() ? "" : " ") +
          original + "\n";
 }
 
@@ -271,7 +271,7 @@ TEST_F(GraphicsRobustAccessTest, ACVectorExcessConstantClamped) {
        %uint_4 = OpConstant %uint 4
        )"
             << MainPrefix() << R"(
-       %var = OpVariable %var_ty Function)" << ACCheck(ac, "%uint_4", "%uint_3")
+       %var = OpVariable %var_ty Function)" << ACCheck(ac, "%uint_4", "%int_3")
             << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
@@ -329,7 +329,7 @@ TEST_F(GraphicsRobustAccessTest, ACVectorGeneralClamped) {
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_3 = OpConstant %int 3
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %int_3
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %int_3
        %var = OpVariable %var_ty Function)" << ACCheck(ac, "%i", "%[[clamp]]")
             << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -354,7 +354,7 @@ TEST_F(GraphicsRobustAccessTest, ACVectorGeneralShortClamped) {
        ; CHECK-DAG: %short_3 = OpConstant %short 3
        ; CHECK-NOT: = OpTypeInt 32
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %short %[[GLSLSTD450]] UClamp %i %short_0 %short_3
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %short %[[GLSLSTD450]] SClamp %i %short_0 %short_3
        %var = OpVariable %var_ty Function)" << ACCheck(ac, "%i", "%[[clamp]]")
             << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -375,11 +375,11 @@ TEST_F(GraphicsRobustAccessTest, ACVectorGeneralUShortClamped) {
             << MainPrefix() << R"(
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-NOT: = OpTypeInt 32
-       ; CHECK-DAG: %ushort_0 = OpConstant %ushort 0
-       ; CHECK-DAG: %ushort_3 = OpConstant %ushort 3
+       ; CHECK-DAG: %short_0 = OpConstant %short 0
+       ; CHECK-DAG: %short_3 = OpConstant %short 3
        ; CHECK-NOT: = OpTypeInt 32
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %ushort %[[GLSLSTD450]] UClamp %i %ushort_0 %ushort_3
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %ushort %[[GLSLSTD450]] SClamp %i %short_0 %short_3
        %var = OpVariable %var_ty Function)" << ACCheck(ac, "%i", "%[[clamp]]")
             << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -404,7 +404,7 @@ TEST_F(GraphicsRobustAccessTest, ACVectorGeneralLongClamped) {
        ; CHECK-DAG: %long_3 = OpConstant %long 3
        ; CHECK-NOT: = OpTypeInt 32
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %long %[[GLSLSTD450]] UClamp %i %long_0 %long_3
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %long %[[GLSLSTD450]] SClamp %i %long_0 %long_3
        %var = OpVariable %var_ty Function)" << ACCheck(ac, "%i", "%[[clamp]]")
             << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -425,11 +425,11 @@ TEST_F(GraphicsRobustAccessTest, ACVectorGeneralULongClamped) {
             << MainPrefix() << R"(
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-NOT: = OpTypeInt 32
-       ; CHECK-DAG: %ulong_0 = OpConstant %ulong 0
-       ; CHECK-DAG: %ulong_3 = OpConstant %ulong 3
+       ; CHECK-DAG: %long_0 = OpConstant %long 0
+       ; CHECK-DAG: %long_3 = OpConstant %long 3
        ; CHECK-NOT: = OpTypeInt 32
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] UClamp %i %ulong_0 %ulong_3
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] SClamp %i %long_0 %long_3
        %var = OpVariable %var_ty Function)" << ACCheck(ac, "%i", "%[[clamp]]")
             << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -486,10 +486,9 @@ TEST_F(GraphicsRobustAccessTest, ACMatrixExcessConstantClamped) {
        %uint_1 = OpConstant %uint 1
        %uint_4 = OpConstant %uint 4
        )" << MainPrefix() << R"(
-       ; CHECK: %uint_3 = OpConstant %uint 3
+       ; CHECK: %int_3 = OpConstant %int 3
        %var = OpVariable %var_ty Function)"
-            << ACCheck(ac, "%uint_4 %uint_1", "%uint_3 %uint_1")
-            << MainSuffix();
+            << ACCheck(ac, "%uint_4 %uint_1", "%int_3 %uint_1") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
 }
@@ -529,7 +528,7 @@ TEST_F(GraphicsRobustAccessTest, ACMatrixGeneralClamped) {
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_3 = OpConstant %int 3
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %int_3
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %int_3
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i %uint_1", "%[[clamp]] %uint_1") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -585,7 +584,7 @@ TEST_F(GraphicsRobustAccessTest, ACArrayGeneralClamped) {
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_199 = OpConstant %int 199
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %int_199
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %int_199
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -606,11 +605,11 @@ TEST_F(GraphicsRobustAccessTest, ACArrayGeneralShortIndexUIntBoundsClamped) {
        %i = OpUndef %short
        )" << MainPrefix() << R"(
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
-       ; CHECK-DAG: %uint_0 = OpConstant %uint 0
-       ; CHECK-DAG: %uint_69999 = OpConstant %uint 69999
+       ; CHECK-DAG: %int_0 = OpConstant %int 0
+       ; CHECK-DAG: %int_69999 = OpConstant %int 69999
        ; CHECK: OpLabel
        ; CHECK: %[[i_ext:\w+]] = OpSConvert %uint %i
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UClamp %[[i_ext]] %uint_0 %uint_69999
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %[[i_ext]] %int_0 %int_69999
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -631,11 +630,11 @@ TEST_F(GraphicsRobustAccessTest, ACArrayGeneralUShortIndexIntBoundsClamped) {
        %i = OpUndef %ushort
        )" << MainPrefix() << R"(
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
-       ; CHECK-DAG: %uint_0 = OpConstant %uint 0
-       ; CHECK-DAG: %uint_69999 = OpConstant %uint 69999
+       ; CHECK-DAG: %int_0 = OpConstant %int 0
+       ; CHECK-DAG: %int_69999 = OpConstant %int 69999
        ; CHECK: OpLabel
        ; CHECK: %[[i_ext:\w+]] = OpUConvert %uint %i
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UClamp %[[i_ext]] %uint_0 %uint_69999
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %[[i_ext]] %int_0 %int_69999
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -656,10 +655,10 @@ TEST_F(GraphicsRobustAccessTest, ACArrayGeneralUIntIndexShortBoundsClamped) {
        %i = OpUndef %uint
        )" << MainPrefix() << R"(
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
-       ; CHECK-DAG: %uint_0 = OpConstant %uint 0
-       ; CHECK-DAG: %uint_199 = OpConstant %uint 199
+       ; CHECK-DAG: %int_0 = OpConstant %int 0
+       ; CHECK-DAG: %int_199 = OpConstant %int 199
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UClamp %i %uint_0 %uint_199
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %i %int_0 %int_199
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -683,7 +682,7 @@ TEST_F(GraphicsRobustAccessTest, ACArrayGeneralIntIndexUShortBoundsClamped) {
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_199 = OpConstant %int 199
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %int_199
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %int_199
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -707,7 +706,7 @@ TEST_F(GraphicsRobustAccessTest, ACArrayGeneralLongIndexUIntBoundsClamped) {
        ; CHECK-DAG: %long_0 = OpConstant %long 0
        ; CHECK-DAG: %long_199 = OpConstant %long 199
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %long %[[GLSLSTD450]] UClamp %i %long_0 %long_199
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %long %[[GLSLSTD450]] SClamp %i %long_0 %long_199
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -728,12 +727,87 @@ TEST_F(GraphicsRobustAccessTest, ACArrayGeneralULongIndexIntBoundsClamped) {
        %i = OpUndef %ulong
        )" << MainPrefix() << R"(
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
-       ; CHECK-DAG: %ulong_0 = OpConstant %ulong 0
-       ; CHECK-DAG: %ulong_199 = OpConstant %ulong 199
+       ; CHECK-DAG: %long_0 = OpConstant %long 0
+       ; CHECK-DAG: %long_199 = OpConstant %long 199
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] UClamp %i %ulong_0 %ulong_199
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] SClamp %i %long_0 %long_199
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
+    SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
+  }
+}
+
+TEST_F(GraphicsRobustAccessTest,
+       ACArrayGeneralShortIndeArrayBiggerThanShortMaxClipsToShortIntMax) {
+  for (auto* ac : AccessChains()) {
+    std::ostringstream shaders;
+    shaders << "OpCapability Int16\n"
+            << ShaderPreambleAC({"i"}) << TypesVoid() << TypesShort()
+            << TypesInt() << TypesFloat() << R"(
+       %uint_50000 = OpConstant %uint 50000
+       %arr = OpTypeArray %float %uint_50000
+       %var_ty = OpTypePointer Function %arr
+       %ptr_ty = OpTypePointer Function %float
+       %i = OpUndef %ushort
+       )" << MainPrefix() << R"(
+       ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
+       ; CHECK-DAG: %short_0 = OpConstant %short 0
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %short 32767
+       ; CHECK: OpLabel
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %ushort %[[GLSLSTD450]] SClamp %i %short_0 %[[intmax]]
+       %var = OpVariable %var_ty Function)"
+            << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
+    SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
+  }
+}
+
+TEST_F(GraphicsRobustAccessTest,
+       ACArrayGeneralIntIndexArrayBiggerThanIntMaxClipsToSignedIntMax) {
+  for (auto* ac : AccessChains()) {
+    std::ostringstream shaders;
+    shaders << ShaderPreambleAC({"i"}) << TypesVoid() << TypesInt()
+            << TypesFloat() << R"(
+       %uint_3000000000 = OpConstant %uint 3000000000
+       %arr = OpTypeArray %float %uint_3000000000
+       %var_ty = OpTypePointer Function %arr
+       %ptr_ty = OpTypePointer Function %float
+       %i = OpUndef %uint
+       )" << MainPrefix() << R"(
+       ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
+       ; CHECK-DAG: %int_0 = OpConstant %int 0
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %int 2147483647
+       ; CHECK: OpLabel
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %i %int_0 %[[intmax]]
+       %var = OpVariable %var_ty Function)"
+            << ACCheck(ac, "%i", "%[[clamp]]") << MainSuffix();
+    SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
+  }
+}
+
+TEST_F(GraphicsRobustAccessTest,
+       ACArrayGeneralLongIndexArrayBiggerThanLongMaxClipsToSignedLongMax) {
+  for (auto* ac : AccessChains()) {
+    std::ostringstream shaders;
+    shaders << "OpCapability Int64\n"
+            << ShaderPreambleAC({"i"}) << TypesVoid() << TypesInt()
+            << TypesLong()
+            << TypesFloat()
+            // 2^63 == 9,223,372,036,854,775,807
+            << R"(
+       %ulong_9223372036854775999 = OpConstant %ulong 9223372036854775999
+       %arr = OpTypeArray %float %ulong_9223372036854775999
+       %var_ty = OpTypePointer Function %arr
+       %ptr_ty = OpTypePointer Function %float
+       %i = OpUndef %ulong
+       )"
+            << MainPrefix() << R"(
+       ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
+       ; CHECK-DAG: %long_0 = OpConstant %long 0
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %long 9223372036854775807
+       ; CHECK: OpLabel
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] SClamp %i %long_0 %[[intmax]]
+       %var = OpVariable %var_ty Function)" << ACCheck(ac, "%i", "%[[clamp]]")
+            << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
 }
@@ -753,9 +827,11 @@ TEST_F(GraphicsRobustAccessTest, ACArraySpecIdSizedAlwaysClamped) {
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-DAG: %uint_0 = OpConstant %uint 0
        ; CHECK-DAG: %uint_1 = OpConstant %uint 1
+       ; CHECK-DAG: %[[uint_intmax:\w+]] = OpConstant %uint 2147483647
        ; CHECK: OpLabel
        ; CHECK: %[[max:\w+]] = OpISub %uint %spec200 %uint_1
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UClamp %uint_5 %uint_0 %[[max]]
+       ; CHECK: %[[smin:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UMin %[[max]] %[[uint_intmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %uint_5 %uint_0 %[[smin]]
        %var = OpVariable %var_ty Function)"
             << ACCheck(ac, "%uint_5", "%[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
@@ -898,7 +974,7 @@ TEST_F(GraphicsRobustAccessTest, ACStructNegativeFail) {
 TEST_F(GraphicsRobustAccessTest, ACRTArrayLeastInboundClamped) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
-    shaders << ShaderPreambleAC() << "OpMemberDecorate %ssbo_s 0 ArrayStride 4 "
+    shaders << ShaderPreambleAC() << "OpDecorate %rtarr ArrayStride 4 "
             << DecoSSBO() << TypesVoid() << TypesInt() << TypesFloat() << R"(
        %rtarr = OpTypeRuntimeArray %float
        %ssbo_s = OpTypeStruct %uint %uint %rtarr
@@ -908,11 +984,13 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayLeastInboundClamped) {
        %int_0 = OpConstant %int 0
        %int_2 = OpConstant %int 2
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
-       ; CHECK: %int_1 = OpConstant %int 1
+       ; CHECK-DAG: %int_1 = OpConstant %int 1
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %int 2147483647
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK: %[[max:\w+]] = OpISub %int %[[arrlen]] %int_1
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %int_0 %int_0 %[[max]]
+       ; CHECK: %[[smin:\w+]] = OpExtInst %int %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %int_0 %int_0 %[[smin]]
        )"
             << MainPrefix() << ACCheck(ac, "%int_2 %int_0", "%int_2 %[[clamp]]")
             << MainSuffix();
@@ -924,9 +1002,8 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralShortIndexClamped) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
     shaders << "OpCapability Int16\n"
-            << ShaderPreambleAC({"i"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 4 " << DecoSSBO()
-            << TypesVoid() << TypesShort() << TypesFloat() << R"(
+            << ShaderPreambleAC({"i"}) << "OpDecorate %rtarr ArrayStride 4 "
+            << DecoSSBO() << TypesVoid() << TypesShort() << TypesFloat() << R"(
        %rtarr = OpTypeRuntimeArray %float
        %ssbo_s = OpTypeStruct %short %short %rtarr
        %var_ty = OpTypePointer Uniform %ssbo_s
@@ -938,11 +1015,13 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralShortIndexClamped) {
        ; CHECK: %uint = OpTypeInt 32 0
        ; CHECK-DAG: %uint_1 = OpConstant %uint 1
        ; CHECK-DAG: %uint_0 = OpConstant %uint 0
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %uint 2147483647
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK-DAG: %[[max:\w+]] = OpISub %uint %[[arrlen]] %uint_1
        ; CHECK-DAG: %[[i_ext:\w+]] = OpSConvert %uint %i
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UClamp %[[i_ext]] %uint_0 %[[max]]
+       ; CHECK: %[[smin:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %[[i_ext]] %uint_0 %[[smin]]
        )"
             << MainPrefix() << ACCheck(ac, "%short_2 %i", "%short_2 %[[clamp]]")
             << MainSuffix();
@@ -954,9 +1033,8 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralUShortIndexClamped) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
     shaders << "OpCapability Int16\n"
-            << ShaderPreambleAC({"i"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 4 " << DecoSSBO()
-            << TypesVoid() << TypesShort() << TypesFloat() << R"(
+            << ShaderPreambleAC({"i"}) << "OpDecorate %rtarr ArrayStride 4 "
+            << DecoSSBO() << TypesVoid() << TypesShort() << TypesFloat() << R"(
        %rtarr = OpTypeRuntimeArray %float
        %ssbo_s = OpTypeStruct %short %short %rtarr
        %var_ty = OpTypePointer Uniform %ssbo_s
@@ -968,11 +1046,13 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralUShortIndexClamped) {
        ; CHECK: %uint = OpTypeInt 32 0
        ; CHECK-DAG: %uint_1 = OpConstant %uint 1
        ; CHECK-DAG: %uint_0 = OpConstant %uint 0
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %uint 2147483647
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK-DAG: %[[max:\w+]] = OpISub %uint %[[arrlen]] %uint_1
        ; CHECK-DAG: %[[i_ext:\w+]] = OpSConvert %uint %i
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UClamp %[[i_ext]] %uint_0 %[[max]]
+       ; CHECK: %[[smin:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %[[i_ext]] %uint_0 %[[smin]]
        )"
             << MainPrefix() << ACCheck(ac, "%short_2 %i", "%short_2 %[[clamp]]")
             << MainSuffix();
@@ -983,9 +1063,8 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralUShortIndexClamped) {
 TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralIntIndexClamped) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
-    shaders << ShaderPreambleAC({"i"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 4 " << DecoSSBO()
-            << TypesVoid() << TypesInt() << TypesFloat() << R"(
+    shaders << ShaderPreambleAC({"i"}) << "OpDecorate %rtarr ArrayStride 4 "
+            << DecoSSBO() << TypesVoid() << TypesInt() << TypesFloat() << R"(
        %rtarr = OpTypeRuntimeArray %float
        %ssbo_s = OpTypeStruct %int %int %rtarr
        %var_ty = OpTypePointer Uniform %ssbo_s
@@ -996,12 +1075,15 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralIntIndexClamped) {
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-DAG: %int_1 = OpConstant %int 1
        ; CHECK-DAG: %int_0 = OpConstant %int 0
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %int 2147483647
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK: %[[max:\w+]] = OpISub %int %[[arrlen]] %int_1
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %[[max]]
-       )" << MainPrefix()
-            << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]") << MainSuffix();
+       ; CHECK: %[[smin:\w+]] = OpExtInst %int %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %[[smin]]
+       )"
+            << MainPrefix() << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]")
+            << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
 }
@@ -1009,9 +1091,8 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralIntIndexClamped) {
 TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralUIntIndexClamped) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
-    shaders << ShaderPreambleAC({"i"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 4 " << DecoSSBO()
-            << TypesVoid() << TypesInt() << TypesFloat() << R"(
+    shaders << ShaderPreambleAC({"i"}) << "OpDecorate %rtarr ArrayStride 4 "
+            << DecoSSBO() << TypesVoid() << TypesInt() << TypesFloat() << R"(
        %rtarr = OpTypeRuntimeArray %float
        %ssbo_s = OpTypeStruct %int %int %rtarr
        %var_ty = OpTypePointer Uniform %ssbo_s
@@ -1022,12 +1103,15 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralUIntIndexClamped) {
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-DAG: %uint_1 = OpConstant %uint 1
        ; CHECK-DAG: %uint_0 = OpConstant %uint 0
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %uint 2147483647
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK: %[[max:\w+]] = OpISub %uint %[[arrlen]] %uint_1
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UClamp %i %uint_0 %[[max]]
-       )" << MainPrefix()
-            << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]") << MainSuffix();
+       ; CHECK: %[[smin:\w+]] = OpExtInst %uint %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %uint %[[GLSLSTD450]] SClamp %i %uint_0 %[[smin]]
+       )"
+            << MainPrefix() << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]")
+            << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
 }
@@ -1036,8 +1120,8 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralLongIndexClamped) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
     shaders << "OpCapability Int64" << ShaderPreambleAC({"i"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 4 " << DecoSSBO()
-            << TypesVoid() << TypesInt() << TypesLong() << TypesFloat() << R"(
+            << "OpDecorate %rtarr ArrayStride 4 " << DecoSSBO() << TypesVoid()
+            << TypesInt() << TypesLong() << TypesFloat() << R"(
        %rtarr = OpTypeRuntimeArray %float
        %ssbo_s = OpTypeStruct %int %int %rtarr
        %var_ty = OpTypePointer Uniform %ssbo_s
@@ -1048,14 +1132,15 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralLongIndexClamped) {
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-DAG: %long_0 = OpConstant %long 0
        ; CHECK-DAG: %long_1 = OpConstant %long 1
+       ; CHECK-DAG: %[[longmax:\w+]] = OpConstant %long 9223372036854775807
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK: %[[arrlen_ext:\w+]] = OpUConvert %ulong %[[arrlen]]
        ; CHECK: %[[max:\w+]] = OpISub %long %[[arrlen_ext]] %long_1
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %long %[[GLSLSTD450]] UClamp %i %long_0 %[[max]]
-       )"
-            << MainPrefix() << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]")
-            << MainSuffix();
+       ; CHECK: %[[smin:\w+]] = OpExtInst %long %[[GLSLSTD450]] UMin %[[max]] %[[longmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %long %[[GLSLSTD450]] SClamp %i %long_0 %[[smin]]
+       )" << MainPrefix()
+            << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
 }
@@ -1064,8 +1149,8 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralULongIndexClamped) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
     shaders << "OpCapability Int64" << ShaderPreambleAC({"i"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 4 " << DecoSSBO()
-            << TypesVoid() << TypesInt() << TypesLong() << TypesFloat() << R"(
+            << "OpDecorate %rtarr ArrayStride 4 " << DecoSSBO() << TypesVoid()
+            << TypesInt() << TypesLong() << TypesFloat() << R"(
        %rtarr = OpTypeRuntimeArray %float
        %ssbo_s = OpTypeStruct %int %int %rtarr
        %var_ty = OpTypePointer Uniform %ssbo_s
@@ -1076,14 +1161,15 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayGeneralULongIndexClamped) {
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-DAG: %ulong_0 = OpConstant %ulong 0
        ; CHECK-DAG: %ulong_1 = OpConstant %ulong 1
+       ; CHECK-DAG: %[[longmax:\w+]] = OpConstant %ulong 9223372036854775807
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK: %[[arrlen_ext:\w+]] = OpUConvert %ulong %[[arrlen]]
        ; CHECK: %[[max:\w+]] = OpISub %ulong %[[arrlen_ext]] %ulong_1
-       ; CHECK: %[[clamp:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] UClamp %i %ulong_0 %[[max]]
-       )"
-            << MainPrefix() << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]")
-            << MainSuffix();
+       ; CHECK: %[[smin:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] UMin %[[max]] %[[longmax]]
+       ; CHECK: %[[clamp:\w+]] = OpExtInst %ulong %[[GLSLSTD450]] SClamp %i %ulong_0 %[[smin]]
+       )" << MainPrefix()
+            << ACCheck(ac, "%int_2 %i", "%int_2 %[[clamp]]") << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
 }
@@ -1095,7 +1181,7 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayStructVectorElem) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
     shaders << ShaderPreambleAC({"i", "j"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 32\n"
+            << "OpDecorate %rtarr ArrayStride 32\n"
             << DecoSSBO() << "OpMemberDecorate %rtelem 0 Offset 0\n"
             << "OpMemberDecorate %rtelem 1 Offset 16\n"
             << TypesVoid() << TypesInt() << TypesFloat() << R"(
@@ -1113,11 +1199,13 @@ TEST_F(GraphicsRobustAccessTest, ACRTArrayStructVectorElem) {
        ; CHECK: %[[GLSLSTD450:\w+]] = OpExtInstImport "GLSL.std.450"
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_3 = OpConstant %int 3
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %int 2147483647
        ; CHECK: OpLabel
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %var 2
        ; CHECK: %[[max:\w+]] = OpISub %int %[[arrlen]] %int_1
-       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %[[max]]
-       ; CHECK: %[[clamp_j:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %j %int_0 %int_3
+       ; CHECK: %[[smin:\w+]] = OpExtInst %int %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %[[smin]]
+       ; CHECK: %[[clamp_j:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %j %int_0 %int_3
        )" << MainPrefix()
             << ACCheck(ac, "%int_2 %i %int_1 %j",
                        "%int_2 %[[clamp_i]] %int_1 %[[clamp_j]]")
@@ -1131,7 +1219,7 @@ TEST_F(GraphicsRobustAccessTest, ACArrayRTArrayStructVectorElem) {
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
     shaders << ShaderPreambleAC({"i", "ssbo_s"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 32\n"
+            << "OpDecorate %rtarr ArrayStride 32\n"
             << DecoSSBO() << "OpMemberDecorate %rtelem 0 Offset 0\n"
             << "OpMemberDecorate %rtelem 1 Offset 16\n"
             << TypesVoid() << TypesInt() << TypesFloat() << R"(
@@ -1152,6 +1240,7 @@ TEST_F(GraphicsRobustAccessTest, ACArrayRTArrayStructVectorElem) {
        ; CHECK-DAG: %[[ssbo_p:\w+]] = OpTypePointer Uniform %ssbo_s
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_9 = OpConstant %int 9
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %int 2147483647
        ; CHECK: OpLabel
        ; This access chain is manufatured only so we can compute the array length.
        ; Note that the %int_9 is already clamped
@@ -1159,7 +1248,8 @@ TEST_F(GraphicsRobustAccessTest, ACArrayRTArrayStructVectorElem) {
             << R"( %[[ssbo_p]] %var %int_9
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %[[ssbo_base]] 2
        ; CHECK: %[[max:\w+]] = OpISub %int %[[arrlen]] %int_1
-       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %[[max]]
+       ; CHECK: %[[smin:\w+]] = OpExtInst %int %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %[[smin]]
        )" << MainPrefix()
             << ACCheck(ac, "%int_17 %int_2 %i %int_1 %int_2",
                        "%int_9 %int_2 %[[clamp_i]] %int_1 %int_2")
@@ -1175,7 +1265,7 @@ TEST_F(GraphicsRobustAccessTest, ACSplitACArrayRTArrayStructVectorElem) {
     std::ostringstream shaders;
     shaders << ShaderPreambleAC({"i", "j", "k", "ssbo_s", "ssbo_pty",
                                  "rtarr_pty", "ac_ssbo", "ac_rtarr"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 32\n"
+            << "OpDecorate %rtarr ArrayStride 32\n"
             << DecoSSBO() << "OpMemberDecorate %rtelem 0 Offset 0\n"
             << "OpMemberDecorate %rtelem 1 Offset 16\n"
             << TypesVoid() << TypesInt() << TypesFloat() << R"(
@@ -1199,8 +1289,9 @@ TEST_F(GraphicsRobustAccessTest, ACSplitACArrayRTArrayStructVectorElem) {
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_9 = OpConstant %int 9
        ; CHECK-DAG: %int_3 = OpConstant %int 3
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %int 2147483647
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %int_9
+       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %int_9
        ; CHECK: %ac_ssbo = )" << ac
             << R"( %ssbo_pty %var %[[clamp_i]]
        ; CHECK: %ac_rtarr = )"
@@ -1211,8 +1302,9 @@ TEST_F(GraphicsRobustAccessTest, ACSplitACArrayRTArrayStructVectorElem) {
        ; definition to find the base pointer %ac_ssbo.
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %ac_ssbo 2
        ; CHECK: %[[max:\w+]] = OpISub %int %[[arrlen]] %int_1
-       ; CHECK: %[[clamp_j:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %j %int_0 %[[max]]
-       ; CHECK: %[[clamp_k:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %k %int_0 %int_3
+       ; CHECK: %[[smin:\w+]] = OpExtInst %int %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp_j:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %j %int_0 %[[smin]]
+       ; CHECK: %[[clamp_k:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %k %int_0 %int_3
        ; CHECK: %ac = )" << ac
             << R"( %ptr_ty %ac_rtarr %[[clamp_j]] %int_1 %[[clamp_k]]
        ; CHECK-NOT: AccessChain
@@ -1231,14 +1323,14 @@ TEST_F(GraphicsRobustAccessTest,
   // Split the address calculation across two access chains.  Force
   // the transform to walk up the access chains to find the base variable.
   // This time, put the different access chains in different basic blocks.
-  // This sanity checks that we keep the instruction-to-block mapping
-  // consistent.
+  // This is an integrity check to ensure that we keep the instruction-to-block
+  // mapping consistent.
   for (auto* ac : AccessChains()) {
     std::ostringstream shaders;
     shaders << ShaderPreambleAC({"i", "j", "k", "bb1", "bb2", "ssbo_s",
                                  "ssbo_pty", "rtarr_pty", "ac_ssbo",
                                  "ac_rtarr"})
-            << "OpMemberDecorate %ssbo_s 0 ArrayStride 32\n"
+            << "OpDecorate %rtarr ArrayStride 32\n"
             << DecoSSBO() << "OpMemberDecorate %rtelem 0 Offset 0\n"
             << "OpMemberDecorate %rtelem 1 Offset 16\n"
             << TypesVoid() << TypesInt() << TypesFloat() << R"(
@@ -1262,8 +1354,9 @@ TEST_F(GraphicsRobustAccessTest,
        ; CHECK-DAG: %int_0 = OpConstant %int 0
        ; CHECK-DAG: %int_9 = OpConstant %int 9
        ; CHECK-DAG: %int_3 = OpConstant %int 3
+       ; CHECK-DAG: %[[intmax:\w+]] = OpConstant %int 2147483647
        ; CHECK: OpLabel
-       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %i %int_0 %int_9
+       ; CHECK: %[[clamp_i:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %i %int_0 %int_9
        ; CHECK: %ac_ssbo = )" << ac
             << R"( %ssbo_pty %var %[[clamp_i]]
        ; CHECK: %bb1 = OpLabel
@@ -1276,8 +1369,9 @@ TEST_F(GraphicsRobustAccessTest,
        ; definition to find the base pointer %ac_ssbo.
        ; CHECK: %[[arrlen:\w+]] = OpArrayLength %uint %ac_ssbo 2
        ; CHECK: %[[max:\w+]] = OpISub %int %[[arrlen]] %int_1
-       ; CHECK: %[[clamp_j:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %j %int_0 %[[max]]
-       ; CHECK: %[[clamp_k:\w+]] = OpExtInst %int %[[GLSLSTD450]] UClamp %k %int_0 %int_3
+       ; CHECK: %[[smin:\w+]] = OpExtInst %int %[[GLSLSTD450]] UMin %[[max]] %[[intmax]]
+       ; CHECK: %[[clamp_j:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %j %int_0 %[[smin]]
+       ; CHECK: %[[clamp_k:\w+]] = OpExtInst %int %[[GLSLSTD450]] SClamp %k %int_0 %int_3
        ; CHECK: %ac = )" << ac
             << R"( %ptr_ty %ac_rtarr %[[clamp_j]] %int_1 %[[clamp_k]]
        ; CHECK-NOT: AccessChain
@@ -1291,6 +1385,167 @@ TEST_F(GraphicsRobustAccessTest,
             << MainSuffix();
     SinglePassRunAndMatch<GraphicsRobustAccessPass>(shaders.str(), true);
   }
+}
+
+TEST_F(GraphicsRobustAccessTest, bug3813) {
+  // This shader comes from Dawn's
+  // TextureViewSamplingTest.TextureCubeMapOnWholeTexture, converted from GLSL
+  // by glslang.
+  // The pass was inserting a signed 32-bit int type, but not correctly marking
+  // the shader as changed.
+  std::string shader = R"(
+; SPIR-V
+; Version: 1.0
+; Generator: Google Shaderc over Glslang; 10
+; Bound: 46
+; Schema: 0
+       OpCapability Shader
+  %1 = OpExtInstImport "GLSL.std.450"
+       OpMemoryModel Logical GLSL450
+       OpEntryPoint Fragment %4 "main" %12 %29
+       OpExecutionMode %4 OriginUpperLeft
+       OpSource GLSL 450
+       OpSourceExtension "GL_GOOGLE_cpp_style_line_directive"
+       OpSourceExtension "GL_GOOGLE_include_directive"
+       OpName %4 "main"
+       OpName %8 "sc"
+       OpName %12 "texCoord"
+       OpName %21 "tc"
+       OpName %29 "fragColor"
+       OpName %32 "texture0"
+       OpName %36 "sampler0"
+       OpDecorate %12 Location 0
+       OpDecorate %29 Location 0
+       OpDecorate %32 DescriptorSet 0
+       OpDecorate %32 Binding 1
+       OpDecorate %36 DescriptorSet 0
+       OpDecorate %36 Binding 0
+  %2 = OpTypeVoid
+  %3 = OpTypeFunction %2
+  %6 = OpTypeFloat 32
+  %7 = OpTypePointer Function %6
+  %9 = OpConstant %6 2
+ %10 = OpTypeVector %6 2
+ %11 = OpTypePointer Input %10
+ %12 = OpVariable %11 Input
+ %13 = OpTypeInt 32 0
+ %14 = OpConstant %13 0
+ %15 = OpTypePointer Input %6
+ %19 = OpConstant %6 1
+ %22 = OpConstant %13 1
+ %27 = OpTypeVector %6 4
+ %28 = OpTypePointer Output %27
+ %29 = OpVariable %28 Output
+ %30 = OpTypeImage %6 Cube 0 0 0 1 Unknown
+ %31 = OpTypePointer UniformConstant %30
+ %32 = OpVariable %31 UniformConstant
+ %34 = OpTypeSampler
+ %35 = OpTypePointer UniformConstant %34
+ %36 = OpVariable %35 UniformConstant
+ %38 = OpTypeSampledImage %30
+ %43 = OpTypeVector %6 3
+  %4 = OpFunction %2 None %3
+  %5 = OpLabel
+  %8 = OpVariable %7 Function
+ %21 = OpVariable %7 Function
+ %16 = OpAccessChain %15 %12 %14
+ %17 = OpLoad %6 %16
+ %18 = OpFMul %6 %9 %17
+ %20 = OpFSub %6 %18 %19
+       OpStore %8 %20
+ %23 = OpAccessChain %15 %12 %22
+ %24 = OpLoad %6 %23
+ %25 = OpFMul %6 %9 %24
+ %26 = OpFSub %6 %25 %19
+       OpStore %21 %26
+ %33 = OpLoad %30 %32
+ %37 = OpLoad %34 %36
+ %39 = OpSampledImage %38 %33 %37
+ %40 = OpLoad %6 %21
+ %41 = OpLoad %6 %8
+ %42 = OpFNegate %6 %41
+ %44 = OpCompositeConstruct %43 %19 %40 %42
+ %45 = OpImageSampleImplicitLod %27 %39 %44
+       OpStore %29 %45
+       OpReturn
+       OpFunctionEnd
+)";
+
+  std::string expected = R"(OpCapability Shader
+%1 = OpExtInstImport "GLSL.std.450"
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %texCoord %fragColor
+OpExecutionMode %main OriginUpperLeft
+OpSource GLSL 450
+OpSourceExtension "GL_GOOGLE_cpp_style_line_directive"
+OpSourceExtension "GL_GOOGLE_include_directive"
+OpName %main "main"
+OpName %sc "sc"
+OpName %texCoord "texCoord"
+OpName %tc "tc"
+OpName %fragColor "fragColor"
+OpName %texture0 "texture0"
+OpName %sampler0 "sampler0"
+OpDecorate %texCoord Location 0
+OpDecorate %fragColor Location 0
+OpDecorate %texture0 DescriptorSet 0
+OpDecorate %texture0 Binding 1
+OpDecorate %sampler0 DescriptorSet 0
+OpDecorate %sampler0 Binding 0
+%void = OpTypeVoid
+%10 = OpTypeFunction %void
+%float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+%float_2 = OpConstant %float 2
+%v2float = OpTypeVector %float 2
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+%texCoord = OpVariable %_ptr_Input_v2float Input
+%uint = OpTypeInt 32 0
+%uint_0 = OpConstant %uint 0
+%_ptr_Input_float = OpTypePointer Input %float
+%float_1 = OpConstant %float 1
+%uint_1 = OpConstant %uint 1
+%v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%fragColor = OpVariable %_ptr_Output_v4float Output
+%23 = OpTypeImage %float Cube 0 0 0 1 Unknown
+%_ptr_UniformConstant_23 = OpTypePointer UniformConstant %23
+%texture0 = OpVariable %_ptr_UniformConstant_23 UniformConstant
+%25 = OpTypeSampler
+%_ptr_UniformConstant_25 = OpTypePointer UniformConstant %25
+%sampler0 = OpVariable %_ptr_UniformConstant_25 UniformConstant
+%27 = OpTypeSampledImage %23
+%v3float = OpTypeVector %float 3
+%int = OpTypeInt 32 1
+%main = OpFunction %void None %10
+%29 = OpLabel
+%sc = OpVariable %_ptr_Function_float Function
+%tc = OpVariable %_ptr_Function_float Function
+%30 = OpAccessChain %_ptr_Input_float %texCoord %uint_0
+%31 = OpLoad %float %30
+%32 = OpFMul %float %float_2 %31
+%33 = OpFSub %float %32 %float_1
+OpStore %sc %33
+%34 = OpAccessChain %_ptr_Input_float %texCoord %uint_1
+%35 = OpLoad %float %34
+%36 = OpFMul %float %float_2 %35
+%37 = OpFSub %float %36 %float_1
+OpStore %tc %37
+%38 = OpLoad %23 %texture0
+%39 = OpLoad %25 %sampler0
+%40 = OpSampledImage %27 %38 %39
+%41 = OpLoad %float %tc
+%42 = OpLoad %float %sc
+%43 = OpFNegate %float %42
+%44 = OpCompositeConstruct %v3float %float_1 %41 %43
+%45 = OpImageSampleImplicitLod %v4float %40 %44
+OpStore %fragColor %45
+OpReturn
+OpFunctionEnd
+)";
+
+  SinglePassRunAndCheck<GraphicsRobustAccessPass>(shader, expected, false,
+                                                  true);
 }
 
 // TODO(dneto): Test access chain index wider than 64 bits?

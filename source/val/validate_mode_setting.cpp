@@ -42,7 +42,8 @@ spv_result_t ValidateEntryPoint(ValidationState_t& _, const Instruction* inst) {
     const auto entry_point_type = _.FindDef(entry_point_type_id);
     if (!entry_point_type || 3 != entry_point_type->words().size()) {
       return _.diag(SPV_ERROR_INVALID_ID, inst)
-             << "OpEntryPoint Entry Point <id> '" << _.getIdName(entry_point_id)
+             << _.VkErrorID(4633) << "OpEntryPoint Entry Point <id> '"
+             << _.getIdName(entry_point_id)
              << "'s function parameter count is not zero.";
     }
   }
@@ -50,7 +51,8 @@ spv_result_t ValidateEntryPoint(ValidationState_t& _, const Instruction* inst) {
   auto return_type = _.FindDef(entry_point->type_id());
   if (!return_type || SpvOpTypeVoid != return_type->opcode()) {
     return _.diag(SPV_ERROR_INVALID_ID, inst)
-           << "OpEntryPoint Entry Point <id> '" << _.getIdName(entry_point_id)
+           << _.VkErrorID(4633) << "OpEntryPoint Entry Point <id> '"
+           << _.getIdName(entry_point_id)
            << "'s function return type is not void.";
   }
 
@@ -226,6 +228,7 @@ spv_result_t ValidateEntryPoint(ValidationState_t& _, const Instruction* inst) {
           }
           if (!ok) {
             return _.diag(SPV_ERROR_INVALID_DATA, inst)
+                   << _.VkErrorID(4683)
                    << "In the Vulkan environment, GLCompute execution model "
                       "entry points require either the LocalSize execution "
                       "mode or an object decorated with WorkgroupSize must be "
@@ -457,31 +460,54 @@ spv_result_t ValidateExecutionMode(ValidationState_t& _,
   if (spvIsVulkanEnv(_.context()->target_env)) {
     if (mode == SpvExecutionModeOriginLowerLeft) {
       return _.diag(SPV_ERROR_INVALID_DATA, inst)
+             << _.VkErrorID(4653)
              << "In the Vulkan environment, the OriginLowerLeft execution mode "
                 "must not be used.";
     }
     if (mode == SpvExecutionModePixelCenterInteger) {
       return _.diag(SPV_ERROR_INVALID_DATA, inst)
+             << _.VkErrorID(4654)
              << "In the Vulkan environment, the PixelCenterInteger execution "
                 "mode must not be used.";
     }
   }
 
-  if (spvIsWebGPUEnv(_.context()->target_env)) {
-    if (mode != SpvExecutionModeOriginUpperLeft &&
-        mode != SpvExecutionModeDepthReplacing &&
-        mode != SpvExecutionModeDepthGreater &&
-        mode != SpvExecutionModeDepthLess &&
-        mode != SpvExecutionModeDepthUnchanged &&
-        mode != SpvExecutionModeLocalSize &&
-        mode != SpvExecutionModeLocalSizeHint) {
+  return SPV_SUCCESS;
+}
+
+spv_result_t ValidateMemoryModel(ValidationState_t& _,
+                                 const Instruction* inst) {
+  // Already produced an error if multiple memory model instructions are
+  // present.
+  if (_.memory_model() != SpvMemoryModelVulkanKHR &&
+      _.HasCapability(SpvCapabilityVulkanMemoryModelKHR)) {
+    return _.diag(SPV_ERROR_INVALID_DATA, inst)
+           << "VulkanMemoryModelKHR capability must only be specified if "
+              "the VulkanKHR memory model is used.";
+  }
+
+  if (spvIsOpenCLEnv(_.context()->target_env)) {
+    if ((_.addressing_model() != SpvAddressingModelPhysical32) &&
+        (_.addressing_model() != SpvAddressingModelPhysical64)) {
       return _.diag(SPV_ERROR_INVALID_DATA, inst)
-             << "Execution mode must be one of OriginUpperLeft, "
-                "DepthReplacing, DepthGreater, DepthLess, DepthUnchanged, "
-                "LocalSize, or LocalSizeHint for WebGPU environment.";
+             << "Addressing model must be Physical32 or Physical64 "
+             << "in the OpenCL environment.";
+    }
+    if (_.memory_model() != SpvMemoryModelOpenCL) {
+      return _.diag(SPV_ERROR_INVALID_DATA, inst)
+             << "Memory model must be OpenCL in the OpenCL environment.";
     }
   }
 
+  if (spvIsVulkanEnv(_.context()->target_env)) {
+    if ((_.addressing_model() != SpvAddressingModelLogical) &&
+        (_.addressing_model() != SpvAddressingModelPhysicalStorageBuffer64)) {
+      return _.diag(SPV_ERROR_INVALID_DATA, inst)
+             << _.VkErrorID(4635)
+             << "Addressing model must be Logical or PhysicalStorageBuffer64 "
+             << "in the Vulkan environment.";
+    }
+  }
   return SPV_SUCCESS;
 }
 
@@ -495,6 +521,9 @@ spv_result_t ModeSettingPass(ValidationState_t& _, const Instruction* inst) {
     case SpvOpExecutionMode:
     case SpvOpExecutionModeId:
       if (auto error = ValidateExecutionMode(_, inst)) return error;
+      break;
+    case SpvOpMemoryModel:
+      if (auto error = ValidateMemoryModel(_, inst)) return error;
       break;
     default:
       break;

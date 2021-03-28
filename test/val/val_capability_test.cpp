@@ -114,8 +114,8 @@ using ValidateCapabilityVulkan10 = spvtest::ValidateBase<CapTestParameter>;
 using ValidateCapabilityOpenGL40 = spvtest::ValidateBase<CapTestParameter>;
 // Always assembles using Vulkan 1.1.
 using ValidateCapabilityVulkan11 = spvtest::ValidateBase<CapTestParameter>;
-// Always assembles using WebGPU.
-using ValidateCapabilityWebGPU = spvtest::ValidateBase<CapTestParameter>;
+// Always assembles using Vulkan 1.2.
+using ValidateCapabilityVulkan12 = spvtest::ValidateBase<CapTestParameter>;
 
 TEST_F(ValidateCapability, Default) {
   const char str[] = R"(
@@ -214,6 +214,114 @@ const std::vector<std::string>& AllCapabilities() {
     "MultiView",
     "VariablePointersStorageBuffer",
     "VariablePointers"};
+  return *r;
+}
+
+const std::vector<std::string>& AllSpirV15Capabilities() {
+  static const auto r = new std::vector<std::string>{
+    "",
+    "Matrix",
+    "Shader",
+    "Geometry",
+    "Tessellation",
+    "Addresses",
+    "Linkage",
+    "Kernel",
+    "Vector16",
+    "Float16Buffer",
+    "Float16",
+    "Float64",
+    "Int64",
+    "Int64Atomics",
+    "ImageBasic",
+    "ImageReadWrite",
+    "ImageMipmap",
+    "Pipes",
+    "Groups",
+    "DeviceEnqueue",
+    "LiteralSampler",
+    "AtomicStorage",
+    "Int16",
+    "TessellationPointSize",
+    "GeometryPointSize",
+    "ImageGatherExtended",
+    "StorageImageMultisample",
+    "UniformBufferArrayDynamicIndexing",
+    "SampledImageArrayDynamicIndexing",
+    "StorageBufferArrayDynamicIndexing",
+    "StorageImageArrayDynamicIndexing",
+    "ClipDistance",
+    "CullDistance",
+    "ImageCubeArray",
+    "SampleRateShading",
+    "ImageRect",
+    "SampledRect",
+    "GenericPointer",
+    "Int8",
+    "InputAttachment",
+    "SparseResidency",
+    "MinLod",
+    "Sampled1D",
+    "Image1D",
+    "SampledCubeArray",
+    "SampledBuffer",
+    "ImageBuffer",
+    "ImageMSArray",
+    "StorageImageExtendedFormats",
+    "ImageQuery",
+    "DerivativeControl",
+    "InterpolationFunction",
+    "TransformFeedback",
+    "GeometryStreams",
+    "StorageImageReadWithoutFormat",
+    "StorageImageWriteWithoutFormat",
+    "MultiViewport",
+    "SubgroupDispatch",
+    "NamedBarrier",
+    "PipeStorage",
+    "GroupNonUniform",
+    "GroupNonUniformVote",
+    "GroupNonUniformArithmetic",
+    "GroupNonUniformBallot",
+    "GroupNonUniformShuffle",
+    "GroupNonUniformShuffleRelative",
+    "GroupNonUniformClustered",
+    "GroupNonUniformQuad",
+    "DrawParameters",
+    "StorageBuffer16BitAccess",
+    "StorageUniformBufferBlock16",
+    "UniformAndStorageBuffer16BitAccess",
+    "StorageUniform16",
+    "StoragePushConstant16",
+    "StorageInputOutput16",
+    "DeviceGroup",
+    "MultiView",
+    "VariablePointersStorageBuffer",
+    "VariablePointers",
+    "DenormPreserve",
+    "DenormFlushToZero",
+    "SignedZeroInfNanPreserve",
+    "RoundingModeRTE",
+    "RoundingModeRTZ",
+    // Omitted due to extra validation requirements on memory model.
+    //"VulkanMemoryModel",
+    //"VulkanMemoryModelDeviceScope",
+    "StorageBuffer8BitAccess",
+    "UniformAndStorageBuffer8BitAccess",
+    "StoragePushConstant8",
+    "ShaderViewportIndex",
+    "ShaderLayer",
+    "PhysicalStorageBufferAddresses",
+    "RuntimeDescriptorArray",
+    "UniformTexelBufferArrayDynamicIndexing",
+    "StorageTexelBufferArrayDynamicIndexing",
+    "UniformBufferArrayNonUniformIndexing",
+    "SampledImageArrayNonUniformIndexing",
+    "StorageBufferArrayNonUniformIndexing",
+    "StorageImageArrayNonUniformIndexing",
+    "InputAttachmentArrayNonUniformIndexing",
+    "UniformTexelBufferArrayNonUniformIndexing",
+    "StorageTexelBufferArrayNonUniformIndexing"};
   return *r;
 }
 
@@ -390,16 +498,92 @@ const std::vector<std::string>& AllVulkan11Capabilities() {
   return *r;
 }
 
-const std::vector<std::string>& AllWebGPUCapabilities() {
+const std::vector<std::string>& AllVulkan12Capabilities() {
   static const auto r = new std::vector<std::string>{
     "",
-    "Shader",
     "Matrix",
+    "Shader",
+    "InputAttachment",
     "Sampled1D",
     "Image1D",
+    "SampledBuffer",
+    "ImageBuffer",
     "ImageQuery",
-    "DerivativeControl"};
-    return *r;
+    "DerivativeControl",
+    "Geometry",
+    "Tessellation",
+    "Float16",
+    "Float64",
+    "Int64",
+    "Int64Atomics",
+    "Int16",
+    "TessellationPointSize",
+    "GeometryPointSize",
+    "ImageGatherExtended",
+    "StorageImageMultisample",
+    "UniformBufferArrayDynamicIndexing",
+    "SampledImageArrayDynamicIndexing",
+    "StorageBufferArrayDynamicIndexing",
+    "StorageImageArrayDynamicIndexing",
+    "ClipDistance",
+    "CullDistance",
+    "ImageCubeArray",
+    "SampleRateShading",
+    "Int8",
+    "SparseResidency",
+    "MinLod",
+    "SampledCubeArray",
+    "ImageMSArray",
+    "StorageImageExtendedFormats",
+    "InterpolationFunction",
+    "StorageImageReadWithoutFormat",
+    "StorageImageWriteWithoutFormat",
+    "MultiViewport",
+    "GroupNonUniform",
+    "GroupNonUniformVote",
+    "GroupNonUniformArithmetic",
+    "GroupNonUniformBallot",
+    "GroupNonUniformShuffle",
+    "GroupNonUniformShuffleRelative",
+    "GroupNonUniformClustered",
+    "GroupNonUniformQuad",
+    "DrawParameters",
+    "StorageBuffer16BitAccess",
+    "StorageUniformBufferBlock16",
+    "UniformAndStorageBuffer16BitAccess",
+    "StorageUniform16",
+    "StoragePushConstant16",
+    "StorageInputOutput16",
+    "DeviceGroup",
+    "MultiView",
+    "VariablePointersStorageBuffer",
+    "VariablePointers",
+    "TransformFeedback",
+    "GeometryStreams",
+    "DenormPreserve",
+    "DenormFlushToZero",
+    "SignedZeroInfNanPreserve",
+    "RoundingModeRTE",
+    "RoundingModeRTZ",
+    "VulkanMemoryModel",
+    "VulkanMemoryModelDeviceScope",
+    "StorageBuffer8BitAccess",
+    "UniformAndStorageBuffer8BitAccess",
+    "StoragePushConstant8",
+    "ShaderViewportIndex",
+    "ShaderLayer",
+    "PhysicalStorageBufferAddresses",
+    "RuntimeDescriptorArray",
+    "UniformTexelBufferArrayDynamicIndexing",
+    "StorageTexelBufferArrayDynamicIndexing",
+    "UniformBufferArrayNonUniformIndexing",
+    "SampledImageArrayNonUniformIndexing",
+    "StorageBufferArrayNonUniformIndexing",
+    "StorageImageArrayNonUniformIndexing",
+    "InputAttachmentArrayNonUniformIndexing",
+    "UniformTexelBufferArrayNonUniformIndexing",
+    "StorageTexelBufferArrayNonUniformIndexing"};
+  return *r;
 }
 
 const std::vector<std::string>& MatrixDependencies() {
@@ -591,12 +775,6 @@ const char kOpenCLMemoryModel[] = \
 const char kGLSL450MemoryModel[] = \
   " OpCapability Shader"
   " OpMemoryModel Logical GLSL450 ";
-
-const char kVulkanMemoryModel[] = \
-  " OpCapability Shader"
-  " OpCapability VulkanMemoryModelKHR"
-  " OpExtension \"SPV_KHR_vulkan_memory_model\""
-  " OpMemoryModel Logical VulkanKHR ";
 
 const char kVoidFVoid[] = \
   " %void   = OpTypeVoid"
@@ -1031,14 +1209,18 @@ std::make_pair(std::string(kOpenCLMemoryModel) +
           "%intt = OpTypeInt 32 0\n" + std::string(kVoidFVoid),
           ShaderDependencies()),
 std::make_pair(std::string(kOpenCLMemoryModel) +
+          // Block applies to struct type.
           "OpEntryPoint Kernel %func \"compute\" \n"
-          "OpDecorate %intt Block\n"
-          "%intt = OpTypeInt 32 0\n" + std::string(kVoidFVoid),
+          "OpDecorate %block Block\n"
+          "%intt = OpTypeInt 32 0\n"
+          "%block = OpTypeStruct %intt\n" + std::string(kVoidFVoid),
           ShaderDependencies()),
 std::make_pair(std::string(kOpenCLMemoryModel) +
+          // BufferBlock applies to struct type.
           "OpEntryPoint Kernel %func \"compute\" \n"
-          "OpDecorate %intt BufferBlock\n"
-          "%intt = OpTypeInt 32 0\n" + std::string(kVoidFVoid),
+          "OpDecorate %block BufferBlock\n"
+          "%intt = OpTypeInt 32 0\n"
+          "%block = OpTypeStruct %intt\n" + std::string(kVoidFVoid),
           ShaderDependencies()),
 std::make_pair(std::string(kOpenCLMemoryModel) +
           "OpEntryPoint Kernel %func \"compute\" \n"
@@ -1165,8 +1347,9 @@ std::make_pair(std::string(kOpenCLMemoryModel) +
           std::vector<std::string>{"GeometryStreams"}),
 std::make_pair(std::string(kOpenCLMemoryModel) +
           "OpEntryPoint Kernel %func \"compute\" \n"
-          "OpDecorate %intt Location 0\n"
-          "%intt = OpTypeInt 32 0\n" + std::string(kVoidFVoid),
+          "OpMemberDecorate %struct 0 Location 0\n"
+          "%intt = OpTypeInt 32 0\n"
+          "%struct = OpTypeStruct %intt\n" + std::string(kVoidFVoid),
           ShaderDependencies()),
 std::make_pair(std::string(kOpenCLMemoryModel) +
           "OpEntryPoint Kernel %func \"compute\" \n"
@@ -1611,16 +1794,6 @@ std::make_pair(std::string(kGLSL450MemoryModel) +
           AllSpirV10Capabilities())
 )));
 
-INSTANTIATE_TEST_SUITE_P(Capabilities, ValidateCapabilityWebGPU,
-                        Combine(
-                            // All capabilities to try.
-                            ValuesIn(AllCapabilities()),
-                            Values(
-std::make_pair(std::string(kVulkanMemoryModel) +
-          "OpEntryPoint Vertex %func \"shader\" \n" + std::string(kVoidFVoid),
-          AllWebGPUCapabilities())
-)));
-
 INSTANTIATE_TEST_SUITE_P(Capabilities, ValidateCapabilityVulkan11,
                         Combine(
                             // All capabilities to try.
@@ -1638,6 +1811,25 @@ std::make_pair(std::string(kGLSL450MemoryModel) +
           "%intt = OpTypeInt 32 0\n"
           "%int0 = OpConstant %intt 0\n" + std::string(kVoidFVoid),
           AllVulkan11Capabilities())
+)));
+
+INSTANTIATE_TEST_SUITE_P(Capabilities, ValidateCapabilityVulkan12,
+                        Combine(
+                            // All capabilities to try.
+                            ValuesIn(AllSpirV15Capabilities()),
+                            Values(
+std::make_pair(std::string(kGLSL450MemoryModel) +
+          "OpEntryPoint Vertex %func \"shader\" \n" +
+          "OpDecorate %int0 BuiltIn PointSize\n"
+          "%intt = OpTypeInt 32 0\n"
+          "%int0 = OpConstant %intt 0\n" + std::string(kVoidFVoid),
+          AllVulkan12Capabilities()),
+std::make_pair(std::string(kGLSL450MemoryModel) +
+          "OpEntryPoint Vertex %func \"shader\" \n" +
+          "OpDecorate %int0 BuiltIn CullDistance\n"
+          "%intt = OpTypeInt 32 0\n"
+          "%int0 = OpConstant %intt 0\n" + std::string(kVoidFVoid),
+          AllVulkan12Capabilities())
 )));
 
 // TODO(umar): Selection Control
@@ -1803,6 +1995,17 @@ TEST_P(ValidateCapabilityVulkan11, Capability) {
   }
 }
 
+TEST_P(ValidateCapabilityVulkan12, Capability) {
+  const std::string capability = Capability(GetParam());
+  if (Exists(capability, SPV_ENV_VULKAN_1_2)) {
+    const std::string test_code = MakeAssembly(GetParam());
+    CompileSuccessfully(test_code, SPV_ENV_VULKAN_1_2);
+    ASSERT_EQ(ExpectedResult(GetParam()),
+              ValidateInstructions(SPV_ENV_VULKAN_1_2))
+        << test_code;
+  }
+}
+
 TEST_P(ValidateCapabilityOpenGL40, Capability) {
   const std::string capability = Capability(GetParam());
   if (Exists(capability, SPV_ENV_OPENGL_4_0)) {
@@ -1810,17 +2013,6 @@ TEST_P(ValidateCapabilityOpenGL40, Capability) {
     CompileSuccessfully(test_code, SPV_ENV_OPENGL_4_0);
     ASSERT_EQ(ExpectedResult(GetParam()),
               ValidateInstructions(SPV_ENV_OPENGL_4_0))
-        << test_code;
-  }
-}
-
-TEST_P(ValidateCapabilityWebGPU, Capability) {
-  const std::string capability = Capability(GetParam());
-  if (Exists(capability, SPV_ENV_WEBGPU_0)) {
-    const std::string test_code = MakeAssembly(GetParam());
-    CompileSuccessfully(test_code, SPV_ENV_WEBGPU_0);
-    ASSERT_EQ(ExpectedResult(GetParam()),
-              ValidateInstructions(SPV_ENV_WEBGPU_0))
         << test_code;
   }
 }
@@ -2055,11 +2247,30 @@ OpMemoryModel Physical64 OpenCL
                         "Embedded Profile"));
 }
 
+TEST_F(ValidateCapability, OpenCL12EmbeddedNoLongerEnabledByCapability) {
+  const std::string spirv = R"(
+OpCapability Kernel
+OpCapability Addresses
+OpCapability Linkage
+OpCapability Pipes
+OpMemoryModel Physical64 OpenCL
+%u32    = OpTypeInt 32 0
+)" + std::string(kVoidFVoid);
+
+  CompileSuccessfully(spirv, SPV_ENV_OPENCL_EMBEDDED_1_2);
+  EXPECT_EQ(SPV_ERROR_INVALID_CAPABILITY,
+            ValidateInstructions(SPV_ENV_OPENCL_EMBEDDED_1_2));
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Capability Pipes is not allowed by OpenCL 1.2 "
+                        "Embedded Profile"));
+}
+
 TEST_F(ValidateCapability, OpenCL20FullCapability) {
   const std::string spirv = R"(
 OpCapability Kernel
 OpCapability Addresses
 OpCapability Linkage
+OpCapability Groups
 OpCapability Pipes
 OpMemoryModel Physical64 OpenCL
 %u32    = OpTypeInt 32 0

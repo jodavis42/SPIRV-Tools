@@ -17,9 +17,9 @@
 
 #include <vector>
 
-#include "source/fuzz/fact_manager.h"
 #include "source/fuzz/protobufs/spirvfuzz_protobufs.h"
 #include "source/fuzz/transformation.h"
+#include "source/fuzz/transformation_context.h"
 #include "source/opt/ir_context.h"
 
 namespace spvtools {
@@ -28,7 +28,7 @@ namespace fuzz {
 class TransformationAddDeadContinue : public Transformation {
  public:
   explicit TransformationAddDeadContinue(
-      const protobufs::TransformationAddDeadContinue& message);
+      protobufs::TransformationAddDeadContinue message);
 
   TransformationAddDeadContinue(uint32_t from_block,
                                 bool continue_condition_value,
@@ -36,6 +36,8 @@ class TransformationAddDeadContinue : public Transformation {
 
   // - |message_.from_block| must be the id of a block a in the given module.
   // - a must be contained in a loop with continue target b
+  // - The continue target b must be dominated by the head of the loop in which
+  //   it is contained
   // - b must not be the merge block of a selection construct
   // - if |message_.continue_condition_value| holds (does not hold) then
   //   OpConstantTrue (OpConstantFalse) must be present in the module
@@ -50,14 +52,18 @@ class TransformationAddDeadContinue : public Transformation {
   //   In particular, adding an edge from somewhere in the loop to the continue
   //   target must not prevent uses of ids in the continue target from being
   //   dominated by the definitions of those ids.
-  bool IsApplicable(opt::IRContext* context,
-                    const FactManager& fact_manager) const override;
+  bool IsApplicable(
+      opt::IRContext* ir_context,
+      const TransformationContext& transformation_context) const override;
 
   // Replaces the terminator of a with a conditional branch to b or c.
   // The boolean constant associated with |message_.continue_condition_value| is
   // used as the condition, and the order of b and c is arranged such that
   // control is guaranteed to jump to c.
-  void Apply(opt::IRContext* context, FactManager* fact_manager) const override;
+  void Apply(opt::IRContext* ir_context,
+             TransformationContext* transformation_context) const override;
+
+  std::unordered_set<uint32_t> GetFreshIds() const override;
 
   protobufs::Transformation ToMessage() const override;
 

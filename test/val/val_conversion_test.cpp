@@ -248,6 +248,8 @@ OpMemoryModel Physical32 OpenCL
 %f64vec4_0123 = OpConstantComposite %f64vec4 %f64_0 %f64_1 %f64_2 %f64_3
 %f64vec4_1234 = OpConstantComposite %f64vec4 %f64_1 %f64_2 %f64_3 %f64_4
 
+%u64vec2_01 = OpConstantComposite %u64vec2 %u64_0 %u64_1
+
 %true = OpConstantTrue %bool
 %false = OpConstantFalse %bool
 
@@ -1206,6 +1208,49 @@ TEST_F(ValidateConversion, BitcastSuccess) {
   ASSERT_EQ(SPV_SUCCESS, ValidateInstructions());
 }
 
+TEST_F(ValidateConversion, BitcastSuccessSPV1p5) {
+  const std::string body = R"(
+%ptr = OpVariable %f32ptr_func Function
+%val1 = OpBitcast %u32 %ptr
+%val2 = OpBitcast %u64 %ptr
+%val3 = OpBitcast %f32ptr_func %u32_1
+%val4 = OpBitcast %f32ptr_wg %u64_1
+%val5 = OpBitcast %f32 %u32_1
+%val6 = OpBitcast %f32vec2 %u32vec2_12
+%val7 = OpBitcast %f32vec2 %u64_1
+%val8 = OpBitcast %f64 %u32vec2_12
+%val9 = OpBitcast %f32vec4 %f64vec2_12
+%val10 = OpBitcast %u32ptr_func %u32vec2_01
+%val11 = OpBitcast %u32vec2 %ptr
+)";
+
+  CompileSuccessfully(GenerateKernelCode(body).c_str(), SPV_ENV_UNIVERSAL_1_5);
+  ASSERT_EQ(SPV_SUCCESS, ValidateInstructions(SPV_ENV_UNIVERSAL_1_5));
+}
+
+TEST_F(ValidateConversion, BitcastSuccessPhysicalStorageBufferKHR) {
+  const std::string body = R"(
+%ptr = OpVariable %f32ptr_func Function
+%val1 = OpBitcast %u32 %ptr
+%val2 = OpBitcast %u64 %ptr
+%val3 = OpBitcast %f32ptr_func %u32_1
+%val4 = OpBitcast %f32ptr_wg %u64_1
+%val5 = OpBitcast %f32 %u32_1
+%val6 = OpBitcast %f32vec2 %u32vec2_12
+%val7 = OpBitcast %f32vec2 %u64_1
+%val8 = OpBitcast %f64 %u32vec2_12
+%val9 = OpBitcast %f32vec4 %f64vec2_12
+%val10 = OpBitcast %u32ptr_func %u32vec2_01
+%val11 = OpBitcast %u32vec2 %ptr
+)";
+
+  CompileSuccessfully(
+      GenerateKernelCode(body,
+                         "\nOpExtension \"SPV_KHR_physical_storage_buffer\"")
+          .c_str());
+  ASSERT_EQ(SPV_SUCCESS, ValidateInstructions());
+}
+
 TEST_F(ValidateConversion, BitcastInputHasNoType) {
   const std::string body = R"(
 %val = OpBitcast %u32 %f32
@@ -1249,10 +1294,66 @@ TEST_F(ValidateConversion, BitcastPtrWrongInputType) {
 
   CompileSuccessfully(GenerateKernelCode(body).c_str());
   ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
-  EXPECT_THAT(
-      getDiagnosticString(),
-      HasSubstr("Expected input to be a pointer or int scalar if Result Type "
-                "is pointer: Bitcast"));
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Expected input to be a pointer or int scalar if "
+                        "Result Type is pointer: Bitcast"));
+}
+
+TEST_F(ValidateConversion, BitcastPtrWrongInputTypeSPV1p5) {
+  const std::string body = R"(
+%val = OpBitcast %u32ptr_func %f32_1
+)";
+
+  CompileSuccessfully(GenerateKernelCode(body).c_str(), SPV_ENV_UNIVERSAL_1_5);
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA,
+            ValidateInstructions(SPV_ENV_UNIVERSAL_1_5));
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Expected input to be a pointer, int scalar or 32-bit "
+                        "int vector if Result Type is pointer: Bitcast"));
+}
+
+TEST_F(ValidateConversion, BitcastPtrWrongInputTypePhysicalStorageBufferKHR) {
+  const std::string body = R"(
+%val = OpBitcast %u32ptr_func %f32_1
+)";
+
+  CompileSuccessfully(
+      GenerateKernelCode(body,
+                         "\nOpExtension \"SPV_KHR_physical_storage_buffer\"")
+          .c_str());
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Expected input to be a pointer, int scalar or 32-bit "
+                        "int vector if Result Type is pointer: Bitcast"));
+}
+
+TEST_F(ValidateConversion, BitcastPtrWrongInputTypeIntVectorSPV1p5) {
+  const std::string body = R"(
+%val = OpBitcast %u32ptr_func %u64vec2_01
+)";
+
+  CompileSuccessfully(GenerateKernelCode(body).c_str(), SPV_ENV_UNIVERSAL_1_5);
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA,
+            ValidateInstructions(SPV_ENV_UNIVERSAL_1_5));
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Expected input to be a pointer, int scalar or 32-bit "
+                        "int vector if Result Type is pointer: Bitcast"));
+}
+
+TEST_F(ValidateConversion,
+       BitcastPtrWrongInputTypeIntVectorPhysicalStorageBufferKHR) {
+  const std::string body = R"(
+%val = OpBitcast %u32ptr_func %u64vec2_01
+)";
+
+  CompileSuccessfully(
+      GenerateKernelCode(body,
+                         "\nOpExtension \"SPV_KHR_physical_storage_buffer\"")
+          .c_str());
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Expected input to be a pointer, int scalar or 32-bit "
+                        "int vector if Result Type is pointer: Bitcast"));
 }
 
 TEST_F(ValidateConversion, BitcastPtrWrongResultType) {
@@ -1262,11 +1363,66 @@ TEST_F(ValidateConversion, BitcastPtrWrongResultType) {
 
   CompileSuccessfully(GenerateKernelCode(body).c_str());
   ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
-  EXPECT_THAT(
-      getDiagnosticString(),
-      HasSubstr(
-          "Pointer can only be converted to another pointer or int scalar: "
-          "Bitcast"));
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Pointer can only be converted to another pointer or "
+                        "int scalar: Bitcast"));
+}
+
+TEST_F(ValidateConversion, BitcastPtrWrongResultTypeSPV1p5) {
+  const std::string body = R"(
+%val = OpBitcast %f32 %f32inp
+)";
+
+  CompileSuccessfully(GenerateKernelCode(body).c_str(), SPV_ENV_UNIVERSAL_1_5);
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA,
+            ValidateInstructions(SPV_ENV_UNIVERSAL_1_5));
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Pointer can only be converted to another pointer, int "
+                        "scalar or 32-bit int vector: Bitcast"));
+}
+
+TEST_F(ValidateConversion, BitcastPtrWrongResultTypePhysicalStorageBufferKHR) {
+  const std::string body = R"(
+%val = OpBitcast %f32 %f32inp
+)";
+
+  CompileSuccessfully(
+      GenerateKernelCode(body,
+                         "\nOpExtension \"SPV_KHR_physical_storage_buffer\"")
+          .c_str());
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Pointer can only be converted to another pointer, int "
+                        "scalar or 32-bit int vector: Bitcast"));
+}
+
+TEST_F(ValidateConversion, BitcastPtrWrongResultTypeIntVectorSPV1p5) {
+  const std::string body = R"(
+%val = OpBitcast %u64vec2 %f32inp
+)";
+
+  CompileSuccessfully(GenerateKernelCode(body).c_str(), SPV_ENV_UNIVERSAL_1_5);
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA,
+            ValidateInstructions(SPV_ENV_UNIVERSAL_1_5));
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Pointer can only be converted to another pointer, int "
+                        "scalar or 32-bit int vector: Bitcast"));
+}
+
+TEST_F(ValidateConversion,
+       BitcastPtrWrongResultTypeIntVectorPhysicalStorageBufferKHR) {
+  const std::string body = R"(
+%val = OpBitcast %u64vec2 %f32inp
+)";
+
+  CompileSuccessfully(
+      GenerateKernelCode(body,
+                         "\nOpExtension \"SPV_KHR_physical_storage_buffer\"")
+          .c_str());
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
+  EXPECT_THAT(getDiagnosticString(),
+              HasSubstr("Pointer can only be converted to another pointer, int "
+                        "scalar or 32-bit int vector: Bitcast"));
 }
 
 TEST_F(ValidateConversion, BitcastDifferentTotalBitWidth) {
@@ -1308,16 +1464,16 @@ OpFunctionEnd
 
 TEST_F(ValidateConversion, ConvertUToPtrPSBSuccess) {
   const std::string body = R"(
-OpCapability PhysicalStorageBufferAddressesEXT
+OpCapability PhysicalStorageBufferAddresses
 OpCapability Int64
 OpCapability Shader
 OpExtension "SPV_EXT_physical_storage_buffer"
-OpMemoryModel PhysicalStorageBuffer64EXT GLSL450
+OpMemoryModel PhysicalStorageBuffer64 GLSL450
 OpEntryPoint Fragment %main "main"
 OpExecutionMode %main OriginUpperLeft
 %uint64 = OpTypeInt 64 0
 %u64_1 = OpConstant %uint64 1
-%ptr = OpTypePointer PhysicalStorageBufferEXT %uint64
+%ptr = OpTypePointer PhysicalStorageBuffer %uint64
 %void = OpTypeVoid
 %voidfn = OpTypeFunction %void
 %main = OpFunction %void None %voidfn
@@ -1333,11 +1489,11 @@ OpFunctionEnd
 
 TEST_F(ValidateConversion, ConvertUToPtrPSBStorageClass) {
   const std::string body = R"(
-OpCapability PhysicalStorageBufferAddressesEXT
+OpCapability PhysicalStorageBufferAddresses
 OpCapability Int64
 OpCapability Shader
 OpExtension "SPV_EXT_physical_storage_buffer"
-OpMemoryModel PhysicalStorageBuffer64EXT GLSL450
+OpMemoryModel PhysicalStorageBuffer64 GLSL450
 OpEntryPoint Fragment %main "main"
 OpExecutionMode %main OriginUpperLeft
 %uint64 = OpTypeInt 64 0
@@ -1357,22 +1513,54 @@ OpFunctionEnd
   ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
   EXPECT_THAT(getDiagnosticString(),
               HasSubstr("Pointer storage class must be "
-                        "PhysicalStorageBufferEXT: ConvertUToPtr"));
+                        "PhysicalStorageBuffer: ConvertUToPtr"));
+}
+
+TEST_F(ValidateConversion, ConvertUToPtrVulkanWrongWidth) {
+  const std::string body = R"(
+OpCapability PhysicalStorageBufferAddresses
+OpCapability Int64
+OpCapability Shader
+OpExtension "SPV_EXT_physical_storage_buffer"
+OpMemoryModel PhysicalStorageBuffer64 GLSL450
+OpEntryPoint Fragment %main "main"
+OpExecutionMode %main OriginUpperLeft
+%uint32 = OpTypeInt 32 0
+%uint64 = OpTypeInt 64 0
+%u32_1 = OpConstant %uint32 1
+%ptr = OpTypePointer PhysicalStorageBuffer %uint64
+%void = OpTypeVoid
+%voidfn = OpTypeFunction %void
+%main = OpFunction %void None %voidfn
+%entry = OpLabel
+%val1 = OpConvertUToPtr %ptr %u32_1
+OpReturn
+OpFunctionEnd
+)";
+
+  CompileSuccessfully(body.c_str());
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions(SPV_ENV_VULKAN_1_0));
+  EXPECT_THAT(getDiagnosticString(),
+              AnyVUID("VUID-StandaloneSpirv-PhysicalStorageBuffer64-04710"));
+  EXPECT_THAT(
+      getDiagnosticString(),
+      HasSubstr("PhysicalStorageBuffer64 addressing mode requires the input "
+                "integer to have a 64-bit width for Vulkan environment."));
 }
 
 TEST_F(ValidateConversion, ConvertPtrToUPSBSuccess) {
   const std::string body = R"(
-OpCapability PhysicalStorageBufferAddressesEXT
+OpCapability PhysicalStorageBufferAddresses
 OpCapability Int64
 OpCapability Shader
 OpExtension "SPV_EXT_physical_storage_buffer"
-OpMemoryModel PhysicalStorageBuffer64EXT GLSL450
+OpMemoryModel PhysicalStorageBuffer64 GLSL450
 OpEntryPoint Fragment %main "main"
 OpExecutionMode %main OriginUpperLeft
 OpDecorate %val1 RestrictPointerEXT
 %uint64 = OpTypeInt 64 0
 %u64_1 = OpConstant %uint64 1
-%ptr = OpTypePointer PhysicalStorageBufferEXT %uint64
+%ptr = OpTypePointer PhysicalStorageBuffer %uint64
 %pptr_f = OpTypePointer Function %ptr
 %void = OpTypeVoid
 %voidfn = OpTypeFunction %void
@@ -1391,11 +1579,11 @@ OpFunctionEnd
 
 TEST_F(ValidateConversion, ConvertPtrToUPSBStorageClass) {
   const std::string body = R"(
-OpCapability PhysicalStorageBufferAddressesEXT
+OpCapability PhysicalStorageBufferAddresses
 OpCapability Int64
 OpCapability Shader
 OpExtension "SPV_EXT_physical_storage_buffer"
-OpMemoryModel PhysicalStorageBuffer64EXT GLSL450
+OpMemoryModel PhysicalStorageBuffer64 GLSL450
 OpEntryPoint Fragment %main "main"
 OpExecutionMode %main OriginUpperLeft
 %uint64 = OpTypeInt 64 0
@@ -1415,7 +1603,42 @@ OpFunctionEnd
   ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions());
   EXPECT_THAT(getDiagnosticString(),
               HasSubstr("Pointer storage class must be "
-                        "PhysicalStorageBufferEXT: ConvertPtrToU"));
+                        "PhysicalStorageBuffer: ConvertPtrToU"));
+}
+
+TEST_F(ValidateConversion, ConvertPtrToUVulkanWrongWidth) {
+  const std::string body = R"(
+OpCapability PhysicalStorageBufferAddresses
+OpCapability Int64
+OpCapability Shader
+OpExtension "SPV_EXT_physical_storage_buffer"
+OpMemoryModel PhysicalStorageBuffer64 GLSL450
+OpEntryPoint Fragment %main "main"
+OpExecutionMode %main OriginUpperLeft
+OpDecorate %val1 RestrictPointerEXT
+%uint32 = OpTypeInt 32 0
+%uint64 = OpTypeInt 64 0
+%ptr = OpTypePointer PhysicalStorageBuffer %uint64
+%pptr_f = OpTypePointer Function %ptr
+%void = OpTypeVoid
+%voidfn = OpTypeFunction %void
+%main = OpFunction %void None %voidfn
+%entry = OpLabel
+%val1 = OpVariable %pptr_f Function
+%val2 = OpLoad %ptr %val1
+%val3 = OpConvertPtrToU %uint32 %val2
+OpReturn
+OpFunctionEnd
+)";
+
+  CompileSuccessfully(body.c_str());
+  ASSERT_EQ(SPV_ERROR_INVALID_DATA, ValidateInstructions(SPV_ENV_VULKAN_1_0));
+  EXPECT_THAT(getDiagnosticString(),
+              AnyVUID("VUID-StandaloneSpirv-PhysicalStorageBuffer64-04710"));
+  EXPECT_THAT(
+      getDiagnosticString(),
+      HasSubstr("PhysicalStorageBuffer64 addressing mode requires the result "
+                "integer type to have a 64-bit width for Vulkan environment."));
 }
 
 using ValidateSmallConversions = spvtest::ValidateBase<std::string>;
